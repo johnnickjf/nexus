@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS — Tower Defense</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas" width="1280" height="720"></canvas>
+    <div id="loading-fallback">Carregando NEXUS...</div>
+  </div>
+
+  <script src="src/core/data.js"></script>
+  <script src="src/core/math.js"></script>
+  <script src="src/core/save.js"></script>
+  <script src="src/core/audio.js"></script>
+  <script src="src/core/input.js"></script>
+  <script src="src/core/render.js"></script>
+
+  <script src="src/maps/maps.js"></script>
+
+  <script src="src/entities/floatingText.js"></script>
+  <script src="src/entities/projectile.js"></script>
+  <script src="src/entities/enemy.js"></script>
+  <script src="src/entities/tower.js"></script>
+
+  <script src="src/systems/enemySystem.js"></script>
+  <script src="src/systems/towerSystem.js"></script>
+  <script src="src/systems/projectileSystem.js"></script>
+  <script src="src/systems/waveSystem.js"></script>
+  <script src="src/systems/hudSystem.js"></script>
+
+  <script src="src/scenes/menuScene.js"></script>
+  <script src="src/scenes/chapterSelectScene.js"></script>
+  <script src="src/scenes/mapSelectScene.js"></script>
+  <script src="src/scenes/skillTreeScene.js"></script>
+  <script src="src/scenes/settingsScene.js"></script>
+  <script src="src/scenes/helpScene.js"></script>
+  <script src="src/scenes/supportScene.js"></script>
+  <script src="src/scenes/gameScene.js"></script>
+  <script src="src/scenes/gameOverScene.js"></script>
+
+  <script src="src/core/game.js"></script>
+</body>
+</html>
