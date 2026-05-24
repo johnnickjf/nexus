@@ -1,14 +1,11 @@
 window.Game = class Game {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
-
-    const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = 1280 * dpr;
-    this.canvas.height = 720 * dpr;
-
     this.ctx = this.canvas.getContext('2d');
-    this.ctx.scale(dpr, dpr);
     this.ctx.imageSmoothingEnabled = true;
+
+    this.resizeCanvas();
+    window.addEventListener('resize', () => this.resizeCanvas());
 
     INPUT.attach(this.canvas);
     SAVE.load();
@@ -49,6 +46,24 @@ window.Game = class Game {
 
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
+  }
+
+  resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = this.canvas.getBoundingClientRect();
+    // CSS displayed size — fall back to virtual if not laid out yet
+    const cssW = Math.max(1, Math.round(rect.width || DATA.VIRTUAL_WIDTH));
+    const cssH = Math.max(1, Math.round(rect.height || DATA.VIRTUAL_HEIGHT));
+
+    // backing store at native pixel density of the displayed area
+    this.canvas.width = Math.round(cssW * dpr);
+    this.canvas.height = Math.round(cssH * dpr);
+
+    // scale so drawing at virtual coords (1280x720) fills the displayed area crisply
+    const scaleX = (cssW * dpr) / DATA.VIRTUAL_WIDTH;
+    const scaleY = (cssH * dpr) / DATA.VIRTUAL_HEIGHT;
+    this.ctx.setTransform(scaleX, 0, 0, scaleY, 0, 0);
+    this.ctx.imageSmoothingEnabled = true;
   }
 
   changeScene(name, payload) {

@@ -1,15 +1,15 @@
 window.SAVE = (function() {
 
-  const KEY = 'nexus_save_v1';
-  const VERSION = 1;
+  const KEY = 'nexus_save_v2';
+  const VERSION = 2;
 
   function makeEmptyTree() {
     const tree = {};
     ['rail', 'ice', 'sniper', 'nova'].forEach(t => {
       tree[t] = {
-        A: new Array(30).fill(false),
-        B: new Array(30).fill(false),
-        C: new Array(30).fill(false)
+        A: new Array(10).fill(false),
+        B: new Array(10).fill(false),
+        C: new Array(10).fill(false)
       };
     });
     return tree;
@@ -90,7 +90,12 @@ window.SAVE = (function() {
     const branch = state.tree[towerType][path];
 
     if (branch[nodeIndex]) return { ok: false, reason: 'already_owned' };
-    if (nodeIndex > 0 && !branch[nodeIndex - 1]) return { ok: false, reason: 'previous_locked' };
+
+    const prereqs = DATA.TREE_LAYOUT.prereqs[nodeIndex];
+    if (prereqs.length > 0 && !prereqs.some(pId => branch[pId])) {
+      return { ok: false, reason: 'previous_locked' };
+    }
+
     if (state.stars < cost) return { ok: false, reason: 'insufficient_stars' };
 
     state.stars -= cost;

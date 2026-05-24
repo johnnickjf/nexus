@@ -88,145 +88,154 @@ window.SkillTreeScene = class SkillTreeScene {
   renderTreeForTower(ctx, towerType) {
     const def = DATA.TOWERS[towerType];
     const effects = DATA.TREE_EFFECTS[towerType];
+    const layout = DATA.TREE_LAYOUT;
     const save = SAVE.get();
     const branches = save.tree[towerType];
 
-    const treeY = 180;
-
     const paths = ['A', 'B', 'C'];
-    const colW = 360;
-    const startX = (DATA.VIRTUAL_WIDTH - colW * 3) / 2;
+    const colW = DATA.VIRTUAL_WIDTH / 3;
+    const treeTopY = 225;
 
     let result = null;
     let hoveredTooltip = null;
 
-    paths.forEach((p, i) => {
-      const x = startX + i * colW;
+    // column separators
+    ctx.save();
+    ctx.strokeStyle = DATA.COLORS.border;
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(colW, 155);     ctx.lineTo(colW, DATA.VIRTUAL_HEIGHT - 30);
+    ctx.moveTo(colW * 2, 155); ctx.lineTo(colW * 2, DATA.VIRTUAL_HEIGHT - 30);
+    ctx.stroke();
+    ctx.restore();
+
+    paths.forEach((p, pi) => {
       const eff = effects[p];
       const owned = branches[p].filter(Boolean).length;
+      const cx = colW * pi + colW / 2;
 
-      RENDER.text(ctx, eff.label, x + colW / 2, treeY, {
-        size: 16, color: def.color, weight: 700,
-        align: 'center', baseline: 'middle', letterSpacing: 4
+      // path header
+      RENDER.text(ctx, eff.label, cx, 164, {
+        size: 14, color: def.color, weight: 700,
+        align: 'center', baseline: 'middle', letterSpacing: 3
       });
-      RENDER.text(ctx, eff.desc, x + colW / 2, treeY + 22, {
-        size: 10, color: DATA.COLORS.textMuted, align: 'center', baseline: 'middle'
+      RENDER.text(ctx, eff.desc, cx, 181, {
+        size: 9, color: DATA.COLORS.textMuted, align: 'center', baseline: 'middle'
       });
-      RENDER.text(ctx, `${owned}/30`, x + colW / 2, treeY + 42, {
-        size: 10, color: owned > 0 ? def.color : DATA.COLORS.textMuted,
+      RENDER.text(ctx, `${owned}/10`, cx, 197, {
+        size: 9, color: owned > 0 ? def.color : DATA.COLORS.textMuted,
         align: 'center', baseline: 'middle', weight: 500
       });
 
-      const nodesPerRow = 6;
-      const nodeSize = 22;
-      const nodeGap = 12;
-      const totalNodesW = nodesPerRow * nodeSize + (nodesPerRow - 1) * nodeGap;
-      const nodesStartX = x + (colW - totalNodesW) / 2;
-      const nodesStartY = treeY + 70;
-      const rowGap = 14;
+      // edges (drawn before nodes so nodes sit on top)
+      layout.edges.forEach(([from, to]) => {
+        const fn = layout.nodes[from];
+        const tn = layout.nodes[to];
+        const fx = cx + fn.relX, fy = treeTopY + fn.relY;
+        const tx2 = cx + tn.relX, ty2 = treeTopY + tn.relY;
+        const bothOwned = branches[p][from] && branches[p][to];
+        const fromOwned = branches[p][from];
 
-      for (let n = 0; n < 30; n++) {
-        const row = Math.floor(n / nodesPerRow);
-        const col = n % nodesPerRow;
-        const nx = nodesStartX + col * (nodeSize + nodeGap);
-        const ny = nodesStartY + row * (nodeSize + rowGap);
-        const isOwned = branches[p][n];
-        const isPurchasable = !isOwned && (n === 0 || branches[p][n - 1]);
-        const cost = DATA.TREE_NODE_COSTS[n];
+        ctx.save();
+        if (bothOwned) {
+          ctx.strokeStyle = def.color;
+          ctx.globalAlpha = 0.65;
+          ctx.lineWidth = 1.5;
+          ctx.shadowColor = def.color;
+          ctx.shadowBlur = 4;
+        } else if (fromOwned) {
+          ctx.strokeStyle = def.color;
+          ctx.globalAlpha = 0.22;
+          ctx.lineWidth = 0.8;
+        } else {
+          ctx.strokeStyle = DATA.COLORS.borderStrong;
+          ctx.globalAlpha = 0.18;
+          ctx.lineWidth = 0.8;
+        }
+        ctx.beginPath();
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(tx2, ty2);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // nodes
+      const mouse = INPUT.getMouse();
+      layout.nodes.forEach(({ id, relX, relY }) => {
+        const nx = cx + relX;
+        const ny = treeTopY + relY;
+        const isOwned = branches[p][id];
+        const prereqs = layout.prereqs[id];
+        const isPurchasable = !isOwned && (prereqs.length === 0 || prereqs.some(pId => branches[p][pId]));
+        const cost = DATA.TREE_NODE_COSTS[id];
         const canAfford = save.stars >= cost;
-        const isFinal = n === 29;
-
-        if (col < nodesPerRow - 1) {
-          ctx.save();
-          ctx.strokeStyle = (isOwned && branches[p][n + 1]) ? def.color : DATA.COLORS.borderStrong;
-          ctx.globalAlpha = (isOwned && branches[p][n + 1]) ? 0.6 : 0.3;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(nx + nodeSize, ny + nodeSize / 2);
-          ctx.lineTo(nx + nodeSize + nodeGap, ny + nodeSize / 2);
-          ctx.stroke();
-          ctx.restore();
-        }
-        if (col === nodesPerRow - 1 && n < 29) {
-          ctx.save();
-          ctx.strokeStyle = (isOwned && branches[p][n + 1]) ? def.color : DATA.COLORS.borderStrong;
-          ctx.globalAlpha = (isOwned && branches[p][n + 1]) ? 0.6 : 0.3;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(nx + nodeSize / 2, ny + nodeSize);
-          ctx.lineTo(nx + nodeSize / 2, ny + nodeSize + rowGap);
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        const mouse = INPUT.getMouse();
-        const hovered = MATH_UTILS.pointInRect(mouse.x, mouse.y, nx, ny, nodeSize, nodeSize);
+        const isFinal = id === 9;
+        const isRoot  = id === 0;
+        const nodeR   = isFinal ? 13 : (isRoot ? 10 : 8);
 
         ctx.save();
         if (isOwned) {
           ctx.fillStyle = def.color;
           ctx.strokeStyle = def.color;
+          ctx.shadowColor = def.color;
+          ctx.shadowBlur = isFinal ? 14 : 6;
         } else if (isPurchasable) {
-          ctx.fillStyle = canAfford ? '#0d1a18' : DATA.COLORS.bg;
+          ctx.fillStyle = canAfford ? '#0a1410' : DATA.COLORS.bg;
           ctx.strokeStyle = canAfford ? def.color : DATA.COLORS.textMuted;
+          if (canAfford) { ctx.shadowColor = def.color; ctx.shadowBlur = 5; }
         } else {
           ctx.fillStyle = DATA.COLORS.bg;
           ctx.strokeStyle = DATA.COLORS.textDim;
         }
-        ctx.lineWidth = isFinal ? 1.5 : 0.8;
+        ctx.lineWidth = (isFinal || isRoot) ? 1.5 : 0.8;
 
         if (isFinal) {
-          RENDER.hexagon(ctx, nx + nodeSize / 2, ny + nodeSize / 2, nodeSize / 2);
+          RENDER.hexagon(ctx, nx, ny, nodeR);
         } else {
           ctx.beginPath();
-          ctx.arc(nx + nodeSize / 2, ny + nodeSize / 2, nodeSize / 2 - 1, 0, Math.PI * 2);
+          ctx.arc(nx, ny, nodeR, 0, Math.PI * 2);
         }
         ctx.fill();
         ctx.stroke();
 
-        if (isOwned) {
+        if (isOwned && !isFinal) {
+          ctx.shadowBlur = 0;
           ctx.fillStyle = DATA.COLORS.bg;
           ctx.beginPath();
-          ctx.arc(nx + nodeSize / 2, ny + nodeSize / 2, nodeSize / 4, 0, Math.PI * 2);
+          ctx.arc(nx, ny, nodeR * 0.38, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.restore();
 
-        if (hovered) {
-          hoveredTooltip = {
-            x: nx + nodeSize / 2,
-            y: ny,
-            label: isFinal ? eff.finalText : eff.nodeText,
-            cost,
-            canAfford,
-            color: def.color,
-            isOwned,
-            isPurchasable
-          };
-          if (isPurchasable && canAfford && INPUT.wasClicked() &&
-              MATH_UTILS.pointInRect(INPUT.clickPos()?.x, INPUT.clickPos()?.y, nx, ny, nodeSize, nodeSize)) {
-            result = { action: 'buyNode', tower: towerType, path: p, node: n };
-            INPUT.consumeClick();
+        const d = MATH_UTILS.dist(mouse.x, mouse.y, nx, ny);
+        if (d <= nodeR + 5) {
+          const label = isFinal ? eff.finalText : (isRoot ? eff.label : eff.nodeText);
+          hoveredTooltip = { x: nx, y: ny, nodeR, label, cost, canAfford, color: def.color, isOwned, isPurchasable };
+
+          if (isPurchasable && canAfford && INPUT.wasClicked()) {
+            const cp = INPUT.clickPos();
+            if (cp && MATH_UTILS.dist(cp.x, cp.y, nx, ny) <= nodeR + 5) {
+              result = { action: 'buyNode', tower: towerType, path: p, node: id };
+              INPUT.consumeClick();
+            }
           }
         }
-      }
+      });
     });
 
-    if (hoveredTooltip) {
-      this.renderTooltip(ctx, hoveredTooltip);
-    }
-
+    if (hoveredTooltip) this.renderTooltip(ctx, hoveredTooltip);
     return result;
   }
 
   renderTooltip(ctx, tt) {
     const w = 200, h = 64;
     let tx = tt.x - w / 2;
-    let ty = tt.y - h - 8;
+    let ty = tt.y - tt.nodeR - h - 10;
 
     if (tx < 20) tx = 20;
     if (tx + w > DATA.VIRTUAL_WIDTH - 20) tx = DATA.VIRTUAL_WIDTH - w - 20;
-    if (ty < 130) ty = tt.y + 30;
+    if (ty < 130) ty = tt.y + tt.nodeR + 10;
 
     ctx.save();
     ctx.shadowColor = 'rgba(0,0,0,0.8)';

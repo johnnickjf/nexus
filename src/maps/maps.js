@@ -136,10 +136,8 @@ window.MAPS = (function() {
         { x: 1180, y: 360 }
       ],
       slots: [
-        { x: 180, y: 310 }, { x: 360, y: 310 }, { x: 540, y: 310 }, { x: 720, y: 310 }, { x: 900, y: 310 }, { x: 1060, y: 310 },
-        { x: 180, y: 410 }, { x: 360, y: 410 }, { x: 540, y: 410 }, { x: 720, y: 410 }, { x: 900, y: 410 }, { x: 1060, y: 410 },
-        { x: 270, y: 230 }, { x: 630, y: 230 }, { x: 990, y: 230 },
-        { x: 270, y: 490 }, { x: 630, y: 490 }, { x: 990, y: 490 }
+        { x: 180, y: 310 }, { x: 360, y: 310 }, { x: 540, y: 310 }, { x: 720, y: 310 }, { x: 900, y: 310 },
+        { x: 180, y: 410 }, { x: 360, y: 410 }, { x: 540, y: 410 }, { x: 720, y: 410 }, { x: 900, y: 410 }
       ]
     },
 
@@ -157,11 +155,11 @@ window.MAPS = (function() {
       ],
       slots: [
         { x: 150, y: 200 }, { x: 320, y: 200 }, { x: 490, y: 200 },
-        { x: 150, y: 300 }, { x: 320, y: 300 }, { x: 490, y: 300 },
-        { x: 620, y: 360 }, { x: 620, y: 440 },
-        { x: 780, y: 360 }, { x: 780, y: 440 },
+        { x: 150, y: 300 }, { x: 320, y: 300 },
+        { x: 620, y: 360 }, { x: 780, y: 360 },
         { x: 850, y: 450 }, { x: 1020, y: 450 },
-        { x: 850, y: 550 }, { x: 1020, y: 550 }
+        { x: 850, y: 550 }, { x: 1020, y: 550 },
+        { x: 1150, y: 490 }
       ]
     },
 
@@ -182,32 +180,190 @@ window.MAPS = (function() {
       slots: [
         { x: 150, y: 150 }, { x: 250, y: 150 },
         { x: 150, y: 250 }, { x: 250, y: 250 },
-        { x: 430, y: 350 }, { x: 600, y: 350 }, { x: 770, y: 350 }, { x: 850, y: 350 },
+        { x: 430, y: 350 }, { x: 600, y: 350 }, { x: 770, y: 350 },
         { x: 430, y: 450 }, { x: 600, y: 450 }, { x: 770, y: 450 },
-        { x: 430, y: 560 }, { x: 600, y: 560 }, { x: 770, y: 560 },
-        { x: 1000, y: 150 }, { x: 1100, y: 150 },
-        { x: 1000, y: 250 }, { x: 1100, y: 250 }
+        { x: 430, y: 560 }, { x: 600, y: 560 },
+        { x: 1000, y: 150 }, { x: 1100, y: 250 }
       ]
     }
   };
 
-  for (let i = 4; i <= 10; i++) {
-    MAP_DEFS[i] = {
-      id: i,
-      name: `Setor 0${i}`,
-      tagline: 'Em construção',
-      coreHp: 20,
-      totalWaves: 10,
-      path: MAP_DEFS[1].path,
-      slots: MAP_DEFS[1].slots,
-      placeholder: true
+  function makeTieredGenerator(tier) {
+    const difficulty = tier - 3;
+    const extraMax = difficulty * 2;
+    return function(waveNumber) {
+      // ramp extras so early waves aren't immediately brutal on hard maps
+      const extraPerWave = Math.min(extraMax, Math.floor(1 + extraMax * 0.18 * waveNumber));
+      const base = defaultWaveGenerator(tier, waveNumber);
+      const added = [];
+      let d = base.enemies.length > 0 ? base.enemies[base.enemies.length - 1].delay + 0.7 : 0;
+      for (let i = 0; i < extraPerWave; i++) {
+        const r = Math.random();
+        let type;
+        if (waveNumber <= 3)      type = r < 0.7 ? 'drone' : 'shield';
+        else if (waveNumber <= 7) type = r < 0.3 ? 'drone' : r < 0.6 ? 'shield' : r < 0.85 ? 'ghost' : 'tank';
+        else                      type = r < 0.2 ? 'drone' : r < 0.45 ? 'shield' : r < 0.65 ? 'ghost' : 'tank';
+        const mods = [];
+        const mr = Math.random();
+        if (mr < 0.10 + difficulty * 0.03) mods.push('shield_blue');
+        else if (mr < 0.13 + difficulty * 0.02) mods.push('shield_gold');
+        if (Math.random() < 0.06 + difficulty * 0.01) mods.push('lightning');
+        if (Math.random() < 0.04 + difficulty * 0.008) mods.push('blink');
+        added.push({ type, delay: d, modifiers: mods });
+        d += 0.35 + Math.random() * 0.35;
+      }
+      const bossEvery = Math.max(3, 6 - Math.floor(difficulty / 2));
+      if (waveNumber % bossEvery === 0 && !base.enemies.some(e => e.type === 'boss')) {
+        const bossMods = difficulty >= 5 ? ['shield_red'] : difficulty >= 3 ? ['shield_gold'] : [];
+        added.push({ type: 'boss', delay: d + 1.5, modifiers: bossMods });
+      }
+      return { number: waveNumber, enemies: [...base.enemies, ...added] };
     };
   }
+
+  MAP_DEFS[4] = {
+    id: 4, name: 'Setor 04', tagline: 'Duplo Z',
+    coreHp: 18, totalWaves: 12,
+    path: [
+      { x: 0,    y: 300 }, { x: 300,  y: 300 }, { x: 300,  y: 500 },
+      { x: 650,  y: 500 }, { x: 650,  y: 180 }, { x: 950,  y: 180 },
+      { x: 950,  y: 420 }, { x: 1180, y: 420 }
+    ],
+    slots: [
+      { x: 100, y: 240 }, { x: 220, y: 240 }, { x: 100, y: 360 }, { x: 220, y: 360 },
+      { x: 230, y: 420 }, { x: 380, y: 420 },
+      { x: 460, y: 440 }, { x: 570, y: 440 }, { x: 460, y: 555 }, { x: 570, y: 555 },
+      { x: 760, y: 300 }, { x: 860, y: 300 }, { x: 760, y: 380 }, { x: 860, y: 380 },
+      { x: 1060, y: 330 }
+    ]
+  };
+
+  MAP_DEFS[5] = {
+    id: 5, name: 'Setor 05', tagline: 'Cascata',
+    coreHp: 16, totalWaves: 13,
+    path: [
+      { x: 0,    y: 160 }, { x: 220,  y: 160 }, { x: 220,  y: 400 },
+      { x: 500,  y: 400 }, { x: 500,  y: 160 }, { x: 780,  y: 160 },
+      { x: 780,  y: 440 }, { x: 1060, y: 440 }, { x: 1060, y: 250 }, { x: 1180, y: 250 }
+    ],
+    slots: [
+      { x: 100, y: 100 },
+      { x: 330, y: 240 }, { x: 420, y: 240 }, { x: 330, y: 330 }, { x: 420, y: 330 },
+      { x: 330, y: 470 }, { x: 420, y: 470 },
+      { x: 590, y: 100 }, { x: 700, y: 100 }, { x: 590, y: 270 }, { x: 700, y: 270 },
+      { x: 880, y: 300 }, { x: 970, y: 300 }, { x: 880, y: 530 }, { x: 970, y: 530 },
+      { x: 1130, y: 170 }
+    ]
+  };
+
+  MAP_DEFS[6] = {
+    id: 6, name: 'Setor 06', tagline: 'Labirinto',
+    coreHp: 15, totalWaves: 14,
+    path: [
+      { x: 0,    y: 360 }, { x: 180,  y: 360 }, { x: 180,  y: 140 },
+      { x: 460,  y: 140 }, { x: 460,  y: 530 }, { x: 740,  y: 530 },
+      { x: 740,  y: 240 }, { x: 1000, y: 240 }, { x: 1000, y: 480 }, { x: 1180, y: 480 }
+    ],
+    slots: [
+      { x: 80, y: 300 }, { x: 80, y: 430 },
+      { x: 280, y: 80  }, { x: 380, y: 80  }, { x: 280, y: 230 }, { x: 380, y: 230 },
+      { x: 320, y: 330 },
+      { x: 570, y: 460 }, { x: 650, y: 460 },
+      { x: 580, y: 350 }, { x: 660, y: 350 },
+      { x: 840, y: 160 }, { x: 930, y: 160 }, { x: 840, y: 370 }, { x: 930, y: 370 },
+      { x: 1090, y: 360 }, { x: 1090, y: 560 }
+    ]
+  };
+
+  MAP_DEFS[7] = {
+    id: 7, name: 'Setor 07', tagline: 'Retrocesso',
+    coreHp: 12, totalWaves: 15,
+    path: [
+      { x: 0,    y: 200 }, { x: 520,  y: 200 }, { x: 520,  y: 380 },
+      { x: 140,  y: 380 }, { x: 140,  y: 540 }, { x: 680,  y: 540 },
+      { x: 680,  y: 300 }, { x: 980,  y: 300 }, { x: 980,  y: 150 }, { x: 1180, y: 150 }
+    ],
+    slots: [
+      { x: 200, y: 140 }, { x: 360, y: 140 },
+      { x: 300, y: 280 }, { x: 420, y: 280 },
+      { x: 80,  y: 300 }, { x: 80,  y: 460 }, { x: 300, y: 460 },
+      { x: 360, y: 480 }, { x: 500, y: 480 }, { x: 560, y: 460 },
+      { x: 780, y: 230 }, { x: 880, y: 230 }, { x: 780, y: 400 }, { x: 880, y: 400 },
+      { x: 1070, y: 230 }, { x: 1070, y: 400 },
+      { x: 800, y: 80  }, { x: 1140, y: 220 }
+    ]
+  };
+
+  MAP_DEFS[8] = {
+    id: 8, name: 'Setor 08', tagline: 'Espiral',
+    coreHp: 10, totalWaves: 16,
+    path: [
+      { x: 0,    y: 300 }, { x: 160,  y: 300 }, { x: 160,  y: 140 },
+      { x: 700,  y: 140 }, { x: 700,  y: 560 }, { x: 260,  y: 560 },
+      { x: 260,  y: 400 }, { x: 860,  y: 400 }, { x: 860,  y: 200 },
+      { x: 1100, y: 200 }, { x: 1100, y: 500 }, { x: 1180, y: 500 }
+    ],
+    slots: [
+      { x: 80,  y: 230 }, { x: 80,  y: 380 },
+      { x: 230, y: 220 },
+      { x: 350, y: 240 }, { x: 500, y: 240 }, { x: 350, y: 330 }, { x: 500, y: 330 },
+      { x: 380, y: 490 }, { x: 450, y: 490 }, { x: 580, y: 490 },
+      { x: 600, y: 310 },
+      { x: 930, y: 220 }, { x: 1020, y: 300 }, { x: 920, y: 490 },
+      { x: 970, y: 130 }, { x: 1040, y: 130 },
+      { x: 1165, y: 350 }, { x: 1165, y: 420 }
+    ]
+  };
+
+  MAP_DEFS[9] = {
+    id: 9, name: 'Setor 09', tagline: 'Serpente',
+    coreHp: 8, totalWaves: 18,
+    path: [
+      { x: 0,   y: 200 }, { x: 140, y: 200 }, { x: 140, y: 520 },
+      { x: 420, y: 520 }, { x: 420, y: 300 }, { x: 260, y: 300 },
+      { x: 260, y: 160 }, { x: 700, y: 160 }, { x: 700, y: 480 },
+      { x: 860, y: 480 }, { x: 860, y: 300 }, { x: 1080, y: 300 },
+      { x: 1080, y: 530 }, { x: 1180, y: 530 }
+    ],
+    slots: [
+      { x: 70,  y: 140 }, { x: 70,  y: 320 },
+      { x: 240, y: 420 }, { x: 340, y: 420 }, { x: 340, y: 580 },
+      { x: 215, y: 230 }, { x: 350, y: 230 },
+      { x: 440, y: 100 }, { x: 580, y: 100 }, { x: 440, y: 250 }, { x: 580, y: 250 },
+      { x: 780, y: 390 }, { x: 970, y: 390 }, { x: 780, y: 220 }, { x: 970, y: 220 },
+      { x: 1155, y: 220 }, { x: 1155, y: 420 }, { x: 980, y: 590 }, { x: 1155, y: 590 }
+    ]
+  };
+
+  MAP_DEFS[10] = {
+    id: 10, name: 'Setor 10', tagline: 'Caos Total',
+    coreHp: 6, totalWaves: 20,
+    path: [
+      { x: 0,    y: 340 }, { x: 120,  y: 340 }, { x: 120,  y: 160 },
+      { x: 340,  y: 160 }, { x: 340,  y: 520 }, { x: 560,  y: 520 },
+      { x: 560,  y: 280 }, { x: 220,  y: 280 }, { x: 220,  y: 430 },
+      { x: 680,  y: 430 }, { x: 680,  y: 160 }, { x: 940,  y: 160 },
+      { x: 940,  y: 500 }, { x: 1100, y: 500 }, { x: 1100, y: 280 }, { x: 1180, y: 280 }
+    ],
+    slots: [
+      { x: 60,  y: 260 }, { x: 60,  y: 430 },
+      { x: 200, y: 100 }, { x: 280, y: 100 }, { x: 430, y: 100 }, { x: 500, y: 100 },
+      { x: 430, y: 380 }, { x: 490, y: 380 }, { x: 430, y: 490 }, { x: 490, y: 490 },
+      { x: 780, y: 100 }, { x: 870, y: 100 }, { x: 780, y: 250 }, { x: 870, y: 250 },
+      { x: 1010, y: 430 }, { x: 1010, y: 570 },
+      { x: 1160, y: 400 }, { x: 1160, y: 570 },
+      { x: 1045, y: 200 }, { x: 1160, y: 190 }
+    ]
+  };
 
   for (const id in MAP_DEFS) {
     const m = MAP_DEFS[id];
     m.pathLength = MATH_UTILS.pathLength(m.path);
     m.waveGenerator = defaultWaveGenerator.bind(null, parseInt(id));
+  }
+
+  for (let t = 4; t <= 10; t++) {
+    MAP_DEFS[t].waveGenerator = makeTieredGenerator(t);
   }
 
   function get(id) {

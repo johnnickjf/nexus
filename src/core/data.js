@@ -47,10 +47,10 @@ window.DATA = (function() {
   const TOWERS = {
     rail: {
       name: 'RAIL',
-      tagline: 'Cadência alta · perfura',
+      tagline: 'Cadência alta',
       color: COLORS.rail,
       shape: 'square',
-      cost: 40,
+      cost: 70,
       damage: 8,
       range: 150,
       cooldown: 0.35,
@@ -66,7 +66,7 @@ window.DATA = (function() {
       tagline: 'Slow · controle',
       color: COLORS.ice,
       shape: 'circle',
-      cost: 55,
+      cost: 50,
       damage: 3,
       range: 140,
       cooldown: 0.6,
@@ -79,11 +79,11 @@ window.DATA = (function() {
     },
     sniper: {
       name: 'SNIPER',
-      tagline: 'Dano alto · quebra escudo',
+      tagline: 'Dano alto',
       color: COLORS.sniper,
       shape: 'triangle',
-      cost: 110,
-      damage: 28,
+      cost: 90,
+      damage: 32,
       range: 240,
       cooldown: 1.8,
       critChance: 0.10,
@@ -94,7 +94,7 @@ window.DATA = (function() {
     },
     nova: {
       name: 'NOVA',
-      tagline: 'AoE · dano contínuo',
+      tagline: 'AoE · burn',
       color: COLORS.nova,
       shape: 'hexagon',
       cost: 160,
@@ -186,47 +186,70 @@ window.DATA = (function() {
   };
 
   const ECONOMY = {
-    startingCoins: 180,
-    waveCompleteBonus: 35,
+    startingCoins: 150,
+    waveCompleteBonus: 30,
     sellRefundPercent: 0.7,
-    starsPerWave: 1,
-    bossWaveStarBonus: 5,
-    mapCompleteStarBonus: 25,
-    waveBreakDuration: 15,
+    starsPerWave: 2,
+    bossWaveStarBonus: 8,
+    mapCompleteStarBonus: 35,
+    waveBreakDuration: 12,
     firstWaveDelay: 25
   };
 
-  const TREE_NODE_COSTS = (function() {
-    const arr = [];
-    for (let i = 1; i <= 30; i++) {
-      if (i <= 10) arr.push(5);
-      else if (i <= 20) arr.push(12);
-      else if (i <= 29) arr.push(25);
-      else arr.push(60);
+  // 10 nodes per path: root(0), row2(1-3), row3(4-5), row4(6-8), final(9)
+  const TREE_NODE_COSTS = [5, 10, 10, 10, 20, 20, 35, 35, 35, 60];
+
+  const TREE_LAYOUT = {
+    nodes: [
+      { id: 0, relX: 0,   relY: 0   },
+      { id: 1, relX: -80, relY: 70  },
+      { id: 2, relX: 0,   relY: 70  },
+      { id: 3, relX: 80,  relY: 70  },
+      { id: 4, relX: -45, relY: 150 },
+      { id: 5, relX: 45,  relY: 150 },
+      { id: 6, relX: -80, relY: 230 },
+      { id: 7, relX: 0,   relY: 230 },
+      { id: 8, relX: 80,  relY: 230 },
+      { id: 9, relX: 0,   relY: 310 }
+    ],
+    edges: [
+      [0,1],[0,2],[0,3],
+      [1,4],[2,4],[2,5],[3,5],
+      [4,6],[4,7],[5,7],[5,8],
+      [6,9],[7,9],[8,9]
+    ],
+    prereqs: {
+      0: [],
+      1: [0], 2: [0], 3: [0],
+      4: [1, 2],
+      5: [2, 3],
+      6: [4],
+      7: [4, 5],
+      8: [5],
+      9: [6, 7, 8]
     }
-    return arr;
-  })();
+  };
 
   const TREE_EFFECTS = {
     rail: {
-      A: { label: 'Velocidade', desc: 'Cadência de tiro', nodeText: '-0.008s cd', finalText: 'Modo Gatling' },
-      B: { label: 'Perfuração', desc: 'Inimigos atravessados', nodeText: '+0.1 alvo', finalText: 'Perfura todos' },
-      C: { label: 'Crítico', desc: 'Chance de dano dobrado', nodeText: '+1% crit', finalText: '+5% crit' }
+      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.025s cd',   finalText: 'Modo Gatling' },
+      B: { label: 'Perfuração', desc: 'Inimigos atravessados',   nodeText: '+0.15 alvo',   finalText: 'Perfura todos' },
+      C: { label: 'Crítico',    desc: 'Chance de dano dobrado',  nodeText: '+2% crit',     finalText: '+10% crit bônus' }
     },
     ice: {
-      A: { label: 'Slow', desc: 'Intensidade do slow', nodeText: '+2% slow', finalText: 'Freeze 1.5s' },
-      B: { label: 'Raio', desc: 'Área do efeito', nodeText: '+1.5 raio', finalText: 'Raio dobrado' },
-      C: { label: 'Dano', desc: 'Dano base', nodeText: '+0.4 dmg', finalText: '+4 dmg' }
+      A: { label: 'Slow',   desc: 'Intensidade do slow', nodeText: '+4% slow',  finalText: 'Freeze 1.5s' },
+      B: { label: 'Raio',   desc: 'Área do efeito',      nodeText: '+3 raio',   finalText: 'Raio dobrado' },
+      C: { label: 'Dano',   desc: 'Dano base',           nodeText: '+0.8 dmg',  finalText: '+8 dmg bônus' }
     },
     sniper: {
-      A: { label: 'Range', desc: 'Alcance do tiro', nodeText: '+6 range', finalText: 'Range ilimitado' },
-      B: { label: 'Dano', desc: 'Dano por tiro', nodeText: '+4 dmg', finalText: 'Execução <20%' },
-      C: { label: 'Quebra-escudo', desc: 'Dano em escudo', nodeText: '+1 dmg escudo', finalText: 'Ignora escudo' }
+      A: { label: 'Range',        desc: 'Alcance do tiro',  nodeText: '+8 range',       finalText: 'Range ilimitado' },
+      B: { label: 'Dano',         desc: 'Dano por tiro',    nodeText: '+4 dmg',         finalText: 'Execução <20%' },
+      C: { label: 'Quebra-escudo',desc: 'Dano em escudo',   nodeText: '+1.5 escudo',    finalText: 'Ignora escudo' }
     },
     nova: {
-      A: { label: 'Dano', desc: 'Dano da explosão', nodeText: '+3 dmg', finalText: '+25 dmg' },
-      B: { label: 'Queimadura', desc: 'Dano por segundo', nodeText: '+0.4 dps', finalText: 'Inferno' },
-      C: { label: 'Raio', desc: 'Raio de explosão', nodeText: '+2 raio', finalText: 'Raio dobrado' }
+      A: { label: 'Dano',       desc: 'Dano da explosão',  nodeText: '+4 dmg',   finalText: '+30 dmg total' },
+      B: { label: 'Queimadura', desc: 'Dano por segundo',  nodeText: '+0.5 dps', finalText: 'Inferno' },
+      C: { label: 'Raio',       desc: 'Raio de explosão',  nodeText: '+3 raio',  finalText: 'Raio dobrado' }
     }
   };
 
@@ -325,6 +348,7 @@ window.DATA = (function() {
     MODIFIERS,
     ECONOMY,
     TREE_NODE_COSTS,
+    TREE_LAYOUT,
     TREE_EFFECTS,
     RUN_UPGRADES,
     computeHp,

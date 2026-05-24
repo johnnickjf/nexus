@@ -178,9 +178,17 @@ window.GameOverScene = class GameOverScene {
       color, size: 12
     })) result = 'replay';
 
-    if (RENDER.button(ctx, px + panelW - 260, btnY, 230, 46, '◇ VOLTAR AO MENU', {
-      color: DATA.COLORS.textSecondary, size: 12
-    })) result = 'menu';
+    const nextMapId = this.result.mapId + 1;
+    const hasNext = won && nextMapId <= 10 && MAPS.get(nextMapId);
+    if (hasNext) {
+      if (RENDER.button(ctx, px + panelW - 260, btnY, 230, 46, '▸ PRÓXIMA FASE', {
+        color: DATA.COLORS.rail, size: 12
+      })) result = 'nextMap';
+    } else {
+      if (RENDER.button(ctx, px + panelW - 260, btnY, 230, 46, '◇ VOLTAR AO MENU', {
+        color: DATA.COLORS.textSecondary, size: 12
+      })) result = 'menu';
+    }
 
     ctx.restore();
     return result;
@@ -188,8 +196,9 @@ window.GameOverScene = class GameOverScene {
 
   handleAction(action, game) {
     if (action === 'replay') {
-      const mapId = this.result.mapId;
-      game.startMap(mapId, 'normal');
+      game.startMap(this.result.mapId, 'normal');
+    } else if (action === 'nextMap') {
+      game.startMap(this.result.mapId + 1, 'normal');
     } else if (action === 'menu') {
       game.changeScene('menu');
     }

@@ -24,6 +24,14 @@ window.Tower = class Tower {
 
     this.applyGlobalBonuses(globalBonuses);
 
+    // Snapshot post-tree values so run upgrades scale from these, not raw def values
+    this._baseCooldown = this.cooldown;
+    this._baseDamage = this.damage;
+    this._baseCritChance = this.critChance;
+    this._baseAoeRadius = this.aoeRadius;
+    this._baseSlowPercent = this.slowEffect ? this.slowEffect.percent : 0;
+    this._baseBurnDps = this.burnEffect ? this.burnEffect.dps : 0;
+
     this.abilities = {
       A: { level: 0 },
       B: { level: 0 },
@@ -42,61 +50,70 @@ window.Tower = class Tower {
 
     const treeEffects = {
       rail: {
-        A: (n) => {
-          this.cooldown = Math.max(0.05, this.cooldown - 0.008 * Math.min(n, 29));
-          if (n === 30) this.cooldown = Math.max(0.05, this.cooldown * 0.3);
+        A: (n, fin) => {
+          this.cooldown = Math.max(0.08, this.cooldown - 0.025 * n);
+          if (fin) this.cooldown = Math.max(0.05, this.cooldown * 0.6);
         },
-        B: (n) => { this.pierceBase += 0.1 * Math.min(n, 29); if (n === 30) this.pierceBase = Infinity; },
-        C: (n) => { this.critChance += 0.01 * Math.min(n, 29); if (n === 30) this.critChance += 0.05; }
+        B: (n, fin) => {
+          this.pierceBase += 0.15 * n;
+          if (fin) this.pierceBase = Infinity;
+        },
+        C: (n, fin) => {
+          this.critChance += 0.02 * n;
+          if (fin) this.critChance += 0.10;
+        }
       },
       ice: {
-        A: (n) => {
-          if (n < 30) this.slowEffect.percent += 0.02 * n;
-          else { this.slowEffect.percent = 1.0; this.slowEffect.duration = 1.5; }
+        A: (n, fin) => {
+          if (!this.slowEffect) return;
+          this.slowEffect.percent = Math.min(0.95, this.slowEffect.percent + 0.04 * n);
+          if (fin) { this.slowEffect.percent = 1.0; this.slowEffect.duration = 1.5; }
         },
-        B: (n) => {
-          if (n < 30) this.aoeRadius += 1.5 * n;
-          else { this.aoeRadius = (this.aoeRadius + 1.5 * 29) * 2; }
+        B: (n, fin) => {
+          this.aoeRadius += 3 * n;
+          if (fin) this.aoeRadius *= 2;
         },
-        C: (n) => {
-          if (n < 30) this.damage += 0.4 * n;
-          else this.damage += 0.4 * 29 + 4;
+        C: (n, fin) => {
+          this.damage += 0.8 * n;
+          if (fin) this.damage += 8;
         }
       },
       sniper: {
-        A: (n) => {
-          if (n < 30) this.range += 6 * n;
-          else this.range = Infinity;
+        A: (n, fin) => {
+          this.range += 8 * n;
+          if (fin) this.range = Infinity;
         },
-        B: (n) => {
-          if (n < 30) this.damage += 4 * n;
-          else { this.damage += 4 * 29; this.canExecute = true; }
+        B: (n, fin) => {
+          this.damage += 4 * n;
+          if (fin) this.canExecute = true;
         },
-        C: (n) => {
-          if (n < 30) this.shieldBreakBonus += Math.min(n, 29);
-          else this.ignoresShield = true;
+        C: (n, fin) => {
+          this.shieldBreakBonus += 1.5 * n;
+          if (fin) this.ignoresShield = true;
         }
       },
       nova: {
-        A: (n) => {
-          if (n < 30) this.damage += 3 * n;
-          else this.damage += 3 * 29 + 25;
+        A: (n, fin) => {
+          this.damage += 4 * n;
+          if (fin) this.damage += 30;
         },
-        B: (n) => {
-          if (n < 30) this.burnEffect.dps += 0.4 * n;
-          else { this.burnEffect.dps = this.burnEffect.dps * 2; this.burnEffect.duration += 3; }
+        B: (n, fin) => {
+          if (!this.burnEffect) return;
+          this.burnEffect.dps += 0.5 * n;
+          if (fin) { this.burnEffect.dps *= 2; this.burnEffect.duration += 3; }
         },
-        C: (n) => {
-          if (n < 30) this.aoeRadius += 2 * n;
-          else this.aoeRadius = (this.aoeRadius + 2 * 29) * 2;
+        C: (n, fin) => {
+          this.aoeRadius += 3 * n;
+          if (fin) this.aoeRadius *= 2;
         }
       }
     };
 
     ['A', 'B', 'C'].forEach(path => {
-      const owned = myBonus[path].filter(Boolean).length;
-      if (owned > 0 && treeEffects[this.type][path]) {
-        treeEffects[this.type][path](owned);
+      const branch = myBonus[path];
+      const owned = branch.filter(Boolean).length;
+      if (owned > 0 && treeEffects[this.type]?.[path]) {
+        treeEffects[this.type][path](owned, branch[9] === true);
       }
     });
   }
@@ -128,23 +145,21 @@ window.Tower = class Tower {
         this.runPierce = pierceLevels[newLevel];
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.6, 0.4][newLevel];
-        const def = DATA.TOWERS.rail;
-        this.cooldown = def.cooldown * cdMul;
+        this.cooldown = this._baseCooldown * cdMul;
       } else if (path === 'C') {
         const critBonus = [0, 0.10, 0.20, 0.35][newLevel];
-        const def = DATA.TOWERS.rail;
-        this.critChance = def.critChance + critBonus;
+        this.critChance = this._baseCritChance + critBonus;
       }
     } else if (this.type === 'ice') {
       if (path === 'A') {
         const slowBonus = [0, 0.15, 0.30, 0.50][newLevel];
-        this.slowEffect.percent = MATH_UTILS.clamp(DATA.TOWERS.ice.projectile.slow.percent + slowBonus, 0, 1);
+        this.slowEffect.percent = MATH_UTILS.clamp(this._baseSlowPercent + slowBonus, 0, 1);
       } else if (path === 'B') {
         const aoeBonus = [0, 10, 25, 50][newLevel];
-        this.aoeRadius = aoeBonus;
+        this.aoeRadius = this._baseAoeRadius + aoeBonus;
       } else if (path === 'C') {
         const dmgBonus = [0, 2, 5, 10][newLevel];
-        this.damage = DATA.TOWERS.ice.damage + dmgBonus;
+        this.damage = this._baseDamage + dmgBonus;
       }
     } else if (this.type === 'sniper') {
       if (path === 'A') {
@@ -158,10 +173,10 @@ window.Tower = class Tower {
     } else if (this.type === 'nova') {
       if (path === 'A') {
         const burnBonus = [0, 2, 5, 10][newLevel];
-        this.burnEffect.dps = DATA.TOWERS.nova.projectile.burn.dps + burnBonus;
+        this.burnEffect.dps = this._baseBurnDps + burnBonus;
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.65, 0.5][newLevel];
-        this.cooldown = DATA.TOWERS.nova.cooldown * cdMul;
+        this.cooldown = this._baseCooldown * cdMul;
       } else if (path === 'C') {
         this.chainCount = newLevel;
       }
