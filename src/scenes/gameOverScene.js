@@ -173,19 +173,29 @@ window.GameOverScene = class GameOverScene {
     });
 
     const btnY = py + panelH - 70;
+    const btnW = 168;
+    const btnH = 46;
+    const gap = 8;
+    const totalW = btnW * 3 + gap * 2;
+    const btnStartX = px + (panelW - totalW) / 2;
     let result = null;
-    if (RENDER.button(ctx, px + 30, btnY, 230, 46, '↻ JOGAR NOVAMENTE', {
+
+    if (RENDER.button(ctx, btnStartX, btnY, btnW, btnH, '↻ JOGAR NOVAMENTE', {
       color, size: 12
     })) result = 'replay';
+
+    if (RENDER.button(ctx, btnStartX + btnW + gap, btnY, btnW, btnH, '✦ HABILIDADES', {
+      color: DATA.COLORS.sniper, size: 12
+    })) result = 'skills';
 
     const nextMapId = this.result.mapId + 1;
     const hasNext = won && nextMapId <= 10 && MAPS.get(nextMapId);
     if (hasNext) {
-      if (RENDER.button(ctx, px + panelW - 260, btnY, 230, 46, '▸ PRÓXIMA FASE', {
+      if (RENDER.button(ctx, btnStartX + (btnW + gap) * 2, btnY, btnW, btnH, '▸ PRÓXIMA FASE', {
         color: DATA.COLORS.rail, size: 12
       })) result = 'nextMap';
     } else {
-      if (RENDER.button(ctx, px + panelW - 260, btnY, 230, 46, '◇ VOLTAR AO MENU', {
+      if (RENDER.button(ctx, btnStartX + (btnW + gap) * 2, btnY, btnW, btnH, '◇ VOLTAR AO MENU', {
         color: DATA.COLORS.textSecondary, size: 12
       })) result = 'menu';
     }
@@ -199,6 +209,8 @@ window.GameOverScene = class GameOverScene {
       game.startMap(this.result.mapId, 'normal');
     } else if (action === 'nextMap') {
       game.startMap(this.result.mapId + 1, 'normal');
+    } else if (action === 'skills') {
+      game.changeScene('skillTree');
     } else if (action === 'menu') {
       game.changeScene('menu');
     }

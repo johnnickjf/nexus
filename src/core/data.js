@@ -51,10 +51,10 @@ window.DATA = (function() {
       color: COLORS.rail,
       shape: 'square',
       cost: 70,
-      damage: 8,
+      damage: 6,
       range: 150,
-      cooldown: 0.35,
-      critChance: 0.05,
+      cooldown: 0.45,
+      critChance: 0.04,
       projectile: {
         type: 'linear',
         speed: 650,
@@ -67,14 +67,14 @@ window.DATA = (function() {
       color: COLORS.ice,
       shape: 'circle',
       cost: 50,
-      damage: 3,
+      damage: 2,
       range: 140,
-      cooldown: 0.6,
+      cooldown: 0.75,
       critChance: 0,
       projectile: {
         type: 'linear',
         speed: 520,
-        slow: { percent: 0.30, duration: 1.8 }
+        slow: { percent: 0.25, duration: 1.5 }
       }
     },
     sniper: {
@@ -83,10 +83,10 @@ window.DATA = (function() {
       color: COLORS.sniper,
       shape: 'triangle',
       cost: 90,
-      damage: 32,
+      damage: 24,
       range: 240,
-      cooldown: 1.8,
-      critChance: 0.10,
+      cooldown: 2.25,
+      critChance: 0.08,
       projectile: {
         type: 'hitscan',
         visualDuration: 0.12
@@ -98,15 +98,15 @@ window.DATA = (function() {
       color: COLORS.nova,
       shape: 'hexagon',
       cost: 160,
-      damage: 22,
+      damage: 16,
       range: 130,
-      cooldown: 1.5,
+      cooldown: 1.9,
       critChance: 0,
       projectile: {
         type: 'arc',
         speed: 320,
-        aoeRadius: 55,
-        burn: { dps: 4, duration: 2.5 }
+        aoeRadius: 40,
+        burn: { dps: 3, duration: 1.9 }
       }
     }
   };

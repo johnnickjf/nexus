@@ -142,7 +142,7 @@ window.HudSystem = class HudSystem {
       const breakLeft = Math.ceil(state.waveBreakLeft);
       const isFirstWave = state.wave === 0;
       const pulse = 0.6 + 0.4 * Math.sin(this.time * 4);
-      const nextWaveBoxW = 360;
+      const nextWaveBoxW = 420;
       const nextWaveBoxH = 52;
       const nx = (w - nextWaveBoxW) / 2;
       const ny = 70;
@@ -322,7 +322,8 @@ window.HudSystem = class HudSystem {
         ctx.fillStyle = filled ? tower.color : DATA.COLORS.bg;
         ctx.strokeStyle = filled ? tower.color : DATA.COLORS.borderStrong;
         ctx.lineWidth = 1;
-        RENDER.roundedRect(ctx, px + 90 + lv * 14, ay + 6, 10, 12, 2);
+        // Dots shifted right to leave room for longer path labels (e.g. "Quebra-escudo")
+        RENDER.roundedRect(ctx, px + 130 + lv * 14, ay + 6, 10, 12, 2);
         ctx.fill();
         ctx.stroke();
         ctx.restore();

@@ -20,8 +20,8 @@ window.ChapterSelectScene = class ChapterSelectScene {
     });
 
     const save = SAVE.get();
-    RENDER.starIcon(ctx, DATA.VIRTUAL_WIDTH - 130, 42, 14);
-    RENDER.text(ctx, String(save.stars), DATA.VIRTUAL_WIDTH - 112, 42,
+    RENDER.starIcon(ctx, DATA.VIRTUAL_WIDTH - 180, 42, 14);
+    RENDER.text(ctx, String(save.stars), DATA.VIRTUAL_WIDTH - 162, 42,
       { size: 14, color: DATA.COLORS.gold, baseline: 'middle', weight: 700 });
 
     if (RENDER.button(ctx, DATA.VIRTUAL_WIDTH - 80, 24, 60, 36, '✦', {
