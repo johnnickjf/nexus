@@ -20,6 +20,7 @@ window.GameScene = class GameScene {
     this.kills = 0;
     this.slotOccupied = {};
 
+    this.repositionsLeft = 0;
     this.exitRequested = null;
     this.victoryRequested = null;
     this.gameOverRequested = null;
@@ -49,6 +50,7 @@ window.GameScene = class GameScene {
     this.floatingTexts = [];
     this.slotOccupied = {};
 
+    this.repositionsLeft = DATA.ECONOMY.repositionsPerMap;
     this.exitRequested = null;
     this.victoryRequested = null;
     this.gameOverRequested = null;
@@ -155,7 +157,8 @@ window.GameScene = class GameScene {
       stars: SAVE.get().stars,
       speed: this.speedMultiplier,
       paused: this.paused,
-      slotOccupied: this.slotOccupied
+      slotOccupied: this.slotOccupied,
+      repositionsLeft: this.repositionsLeft
     };
 
     this.hudSystem.render(ctx, state);
@@ -229,6 +232,9 @@ window.GameScene = class GameScene {
 
   renderSlots(ctx) {
     const mouse = INPUT.getMouse();
+    const inMoveMode = this.hudSystem.moveMode;
+    const pulse = 0.5 + 0.5 * Math.sin(this.gameTime * 5);
+
     this.mapData.slots.forEach((slot, i) => {
       const key = slot.x + ',' + slot.y;
       if (this.slotOccupied[key]) return;
@@ -236,19 +242,35 @@ window.GameScene = class GameScene {
       const hovered = MATH_UTILS.pointInCircle(mouse.x, mouse.y, slot.x, slot.y, 20);
       const canPlace = this.hudSystem.selectedTowerType !== null;
 
+      let strokeColor, fillColor, dotColor, radius = 14;
+      if (inMoveMode) {
+        strokeColor = hovered ? DATA.COLORS.sniper : DATA.COLORS.gold;
+        fillColor   = hovered ? '#201a06' : 'transparent';
+        dotColor    = hovered ? DATA.COLORS.sniper : DATA.COLORS.gold;
+      } else {
+        strokeColor = (hovered && canPlace) ? DATA.COLORS.rail : DATA.COLORS.borderStrong;
+        fillColor   = (hovered && canPlace) ? '#0d1a18' : 'transparent';
+        dotColor    = (hovered && canPlace) ? DATA.COLORS.rail : DATA.COLORS.textDim;
+      }
+
       ctx.save();
-      ctx.strokeStyle = (hovered && canPlace) ? DATA.COLORS.rail : DATA.COLORS.borderStrong;
-      ctx.fillStyle = (hovered && canPlace) ? '#0d1a18' : 'transparent';
-      ctx.lineWidth = 0.8;
-      ctx.setLineDash([3, 3]);
+      if (inMoveMode) {
+        ctx.globalAlpha = hovered ? 1 : 0.5 + 0.3 * pulse;
+        if (hovered) { ctx.shadowColor = DATA.COLORS.sniper; ctx.shadowBlur = 12; }
+      }
+      ctx.strokeStyle = strokeColor;
+      ctx.fillStyle   = fillColor;
+      ctx.lineWidth   = inMoveMode ? 1.4 : 0.8;
+      ctx.setLineDash(inMoveMode ? [4, 2] : [3, 3]);
       ctx.beginPath();
-      ctx.arc(slot.x, slot.y, 14, 0, Math.PI * 2);
-      if (hovered && canPlace) ctx.fill();
+      ctx.arc(slot.x, slot.y, radius, 0, Math.PI * 2);
+      if (fillColor !== 'transparent') ctx.fill();
       ctx.stroke();
       ctx.restore();
 
       ctx.save();
-      ctx.fillStyle = (hovered && canPlace) ? DATA.COLORS.rail : DATA.COLORS.textDim;
+      if (inMoveMode) ctx.globalAlpha = hovered ? 1 : 0.5 + 0.3 * pulse;
+      ctx.fillStyle = dotColor;
       ctx.beginPath();
       ctx.arc(slot.x, slot.y, 1.5, 0, Math.PI * 2);
       ctx.fill();
@@ -287,6 +309,24 @@ window.GameScene = class GameScene {
     if (!cp) return;
 
     if (cp.y < 60 || cp.y > DATA.VIRTUAL_HEIGHT - 100) return;
+
+    // Move mode — click empty slot to reposition, anything else cancels
+    if (this.hudSystem.moveMode && this.hudSystem.movingTower) {
+      for (const slot of this.mapData.slots) {
+        const key = slot.x + ',' + slot.y;
+        if (this.slotOccupied[key]) continue;
+        if (MATH_UTILS.pointInCircle(cp.x, cp.y, slot.x, slot.y, 22)) {
+          this.processHudAction({ type: 'moveTower', slot });
+          INPUT.consumeClick();
+          return;
+        }
+      }
+      // Clicked somewhere that's not a valid slot — cancel
+      this.hudSystem.moveMode = false;
+      this.hudSystem.movingTower = null;
+      INPUT.consumeClick();
+      return;
+    }
 
     if (this.hudSystem.selectedTowerType) {
       for (const slot of this.mapData.slots) {
@@ -361,6 +401,28 @@ window.GameScene = class GameScene {
       this.towerSystem.remove(t);
       this.hudSystem.deselectAll(this.towerSystem);
       AUDIO.sfx.sell();
+    } else if (action.type === 'startMove') {
+      const t = this.hudSystem.selectedPlacedTower;
+      if (!t || this.repositionsLeft <= 0) return;
+      this.hudSystem.moveMode = true;
+      this.hudSystem.movingTower = t;
+    } else if (action.type === 'cancelMove') {
+      this.hudSystem.moveMode = false;
+      this.hudSystem.movingTower = null;
+    } else if (action.type === 'moveTower') {
+      const t = this.hudSystem.movingTower;
+      if (!t) return;
+      const oldKey = t.x + ',' + t.y;
+      const newKey = action.slot.x + ',' + action.slot.y;
+      this.slotOccupied[oldKey] = false;
+      this.slotOccupied[newKey] = true;
+      t.x = action.slot.x;
+      t.y = action.slot.y;
+      t.slotIndex = this.mapData.slots.indexOf(action.slot);
+      this.repositionsLeft--;
+      this.hudSystem.moveMode = false;
+      this.hudSystem.movingTower = null;
+      AUDIO.sfx.place();
     }
   }
 

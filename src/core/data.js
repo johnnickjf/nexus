@@ -193,7 +193,8 @@ window.DATA = (function() {
     bossWaveStarBonus: 8,
     mapCompleteStarBonus: 35,
     waveBreakDuration: 12,
-    firstWaveDelay: 15
+    firstWaveDelay: 15,
+    repositionsPerMap: 3
   };
 
   // 10 nodes per path: root(0), row2(1-3), row3(4-5), row4(6-8), final(9)

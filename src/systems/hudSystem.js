@@ -5,6 +5,8 @@ window.HudSystem = class HudSystem {
     this.hoveredButtonId = null;
     this.lastClickAction = null;
     this.showingStats = false;
+    this.moveMode = false;
+    this.movingTower = null;
     this.time = 0;
   }
 
@@ -17,6 +19,8 @@ window.HudSystem = class HudSystem {
     this.selectedPlacedTower = tower;
     this.selectedTowerType = null;
     this.showingStats = false;
+    this.moveMode = false;
+    this.movingTower = null;
     if (tower) tower.selected = true;
   }
 
@@ -25,6 +29,8 @@ window.HudSystem = class HudSystem {
     this.selectedPlacedTower = null;
     this.selectedTowerType = null;
     this.showingStats = false;
+    this.moveMode = false;
+    this.movingTower = null;
     towerSystem?.towers.forEach(t => t.selected = false);
   }
 
@@ -117,6 +123,10 @@ window.HudSystem = class HudSystem {
     RENDER.starIcon(ctx, starX, 28, 14);
     RENDER.text(ctx, String(state.stars), starX + 14, 28,
       { size: 14, color: DATA.COLORS.textPrimary, baseline: 'middle', weight: 500 });
+
+    const repoColor = state.repositionsLeft > 0 ? DATA.COLORS.sniper : DATA.COLORS.textDim;
+    RENDER.text(ctx, `↕ ${state.repositionsLeft}`, starX + 66, 28,
+      { size: 12, color: repoColor, baseline: 'middle', weight: 700 });
 
     const speedX = 1060;
     this.lastClickAction = null;
@@ -385,7 +395,26 @@ window.HudSystem = class HudSystem {
 
     const sellY = py + panelH - 40;
     const refund = Math.floor(tower.totalSpent * DATA.ECONOMY.sellRefundPercent);
-    if (RENDER.button(ctx, px + 16, sellY, panelW - 32, 28, `✕ VENDER (+◈ ${refund})`, {
+    const moverW = 88;
+    const sellW  = panelW - 32 - moverW - 6;
+
+    // MOVER / CANCELAR button (left)
+    if (this.moveMode && this.movingTower === tower) {
+      if (RENDER.button(ctx, px + 16, sellY, moverW, 28, '✕ CANCELAR', {
+        color: DATA.COLORS.danger, size: 10
+      })) this.lastClickAction = { type: 'cancelMove' };
+    } else if (state.repositionsLeft > 0 && !this.moveMode) {
+      if (RENDER.button(ctx, px + 16, sellY, moverW, 28, `↕ MOVER (${state.repositionsLeft})`, {
+        color: DATA.COLORS.sniper, size: 10
+      })) this.lastClickAction = { type: 'startMove' };
+    } else {
+      RENDER.button(ctx, px + 16, sellY, moverW, 28, '↕ MOVER', {
+        color: DATA.COLORS.textDim, size: 10, disabled: true
+      });
+    }
+
+    // VENDER button (right)
+    if (RENDER.button(ctx, px + 16 + moverW + 6, sellY, sellW, 28, `✕ +◈ ${refund}`, {
       color: DATA.COLORS.danger, size: 11
     })) {
       this.lastClickAction = { type: 'sellTower' };
