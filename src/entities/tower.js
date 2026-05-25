@@ -104,7 +104,7 @@ window.Tower = class Tower {
         },
         C: (n, fin) => {
           this.aoeRadius += 3 * n;
-          if (fin) this.aoeRadius *= 2;
+          if (fin) this.aoeRadius *= 1.5;
         }
       }
     };
@@ -141,11 +141,11 @@ window.Tower = class Tower {
   applyRunUpgradeEffect(path, newLevel) {
     if (this.type === 'rail') {
       if (path === 'A') {
-        const pierceLevels = [0, 1, 2, 4];
+        const pierceLevels = [0, 1, 2, 3];
         this.runPierce = pierceLevels[newLevel];
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.6, 0.4][newLevel];
-        this.cooldown = Math.max(0.10, this._baseCooldown * cdMul);
+        this.cooldown = Math.max(0.18, this._baseCooldown * cdMul);
       } else if (path === 'C') {
         const critBonus = [0, 0.10, 0.20, 0.35][newLevel];
         this.critChance = Math.min(0.50, this._baseCritChance + critBonus);
@@ -153,7 +153,7 @@ window.Tower = class Tower {
     } else if (this.type === 'ice') {
       if (path === 'A') {
         const slowBonus = [0, 0.15, 0.30, 0.50][newLevel];
-        this.slowEffect.percent = MATH_UTILS.clamp(this._baseSlowPercent + slowBonus, 0, 0.85);
+        this.slowEffect.percent = MATH_UTILS.clamp(this._baseSlowPercent + slowBonus, 0, 0.90);
       } else if (path === 'B') {
         const aoeBonus = [0, 5, 12, 25][newLevel];
         this.aoeRadius = this._baseAoeRadius + aoeBonus;
@@ -172,11 +172,11 @@ window.Tower = class Tower {
       }
     } else if (this.type === 'nova') {
       if (path === 'A') {
-        const burnBonus = [0, 2, 5, 10][newLevel];
+        const burnBonus = [0, 2, 5, 6][newLevel];
         this.burnEffect.dps = this._baseBurnDps + burnBonus;
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.65, 0.5][newLevel];
-        this.cooldown = this._baseCooldown * cdMul;
+        this.cooldown = Math.max(0.9, this._baseCooldown * cdMul);
       } else if (path === 'C') {
         this.chainCount = newLevel;
       }

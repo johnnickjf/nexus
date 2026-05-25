@@ -52,12 +52,21 @@ window.Enemy = class Enemy {
   }
 
   applyModifier(mod) {
-    if (mod === 'shield_blue') this.shield = { hp: 3, maxHp: 3, color: DATA.SHIELDS.blue.color, type: 'blue' };
-    else if (mod === 'shield_gold') this.shield = { hp: 8, maxHp: 8, color: DATA.SHIELDS.gold.color, type: 'gold' };
-    else if (mod === 'shield_red') this.shield = { hp: 15, maxHp: 15, color: DATA.SHIELDS.red.color, type: 'red' };
-    else if (mod === 'lightning') this.hasLightning = true;
-    else if (mod === 'blink') this.blink = { phase: 'vulnerable', timeLeft: DATA.MODIFIERS.blink.vulnerableTime };
-    else if (mod.startsWith('immune_')) {
+    if (mod === 'shield_blue') {
+      this.shield = { hp: 3, maxHp: 3, color: DATA.SHIELDS.blue.color, type: 'blue' };
+      if (!this.immunities.includes('rail')) this.immunities.push('rail');
+    } else if (mod === 'shield_gold') {
+      this.shield = { hp: 8, maxHp: 8, color: DATA.SHIELDS.gold.color, type: 'gold' };
+      if (!this.immunities.includes('rail')) this.immunities.push('rail');
+    } else if (mod === 'shield_red') {
+      this.shield = { hp: 15, maxHp: 15, color: DATA.SHIELDS.red.color, type: 'red' };
+      if (!this.immunities.includes('rail')) this.immunities.push('rail');
+    } else if (mod === 'lightning') {
+      this.hasLightning = true;
+      if (!this.immunities.includes('ice')) this.immunities.push('ice');
+    } else if (mod === 'blink') {
+      this.blink = { phase: 'vulnerable', timeLeft: DATA.MODIFIERS.blink.vulnerableTime };
+    } else if (mod.startsWith('immune_')) {
       const tower = mod.replace('immune_', '');
       this.immunities.push(tower);
     }

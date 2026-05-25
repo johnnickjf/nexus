@@ -118,7 +118,7 @@ window.ProjectileSystem = class ProjectileSystem {
         if (d < bestD) { bestD = d; next = e; }
       }
       if (!next) break;
-      lastDamage = Math.floor(lastDamage * 0.7);
+      lastDamage = Math.floor(lastDamage * 0.55);
 
       const chainVictims = enemySystem.enemiesInRadius(next.x, next.y, p.aoeRadius);
       for (const v of chainVictims) {
@@ -162,7 +162,11 @@ window.ProjectileSystem = class ProjectileSystem {
       if (!hit.ignoresShield) {
         const drain = 1 + (hit.shieldBreakBonus || 0);
         enemy.shield.hp -= drain;
-        if (enemy.shield.hp <= 0) enemy.shield = null;
+        if (enemy.shield.hp <= 0) {
+          enemy.shield = null;
+          const railIdx = enemy.immunities.indexOf('rail');
+          if (railIdx !== -1) enemy.immunities.splice(railIdx, 1);
+        }
 
         if (hit.sourceTowerType === 'ice' && hit.slow) {
           this.applySlowAndBurn(enemy, hit);

@@ -84,9 +84,19 @@ window.GameScene = class GameScene {
       (waveNumber) => {
         AUDIO.sfx.waveStart();
       },
-      (didWin) => {
+      (didWin, mapStars) => {
         if (didWin) {
           SAVE.markMapComplete(this.mapData.id);
+          if (mapStars) {
+            this.runStarsEarned += mapStars;
+            SAVE.addStars(mapStars);
+            this.floatingTexts.push(new FloatingText(
+              `+${mapStars} ✦`,
+              DATA.VIRTUAL_WIDTH / 2,
+              DATA.VIRTUAL_HEIGHT / 2 - 60,
+              DATA.COLORS.gold
+            ));
+          }
           AUDIO.sfx.victory();
           this.victoryRequested = true;
         }
@@ -119,7 +129,7 @@ window.GameScene = class GameScene {
     );
 
     for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-      this.floatingTexts[i].tick(dt);
+      this.floatingTexts[i].tick(effDt);
       if (this.floatingTexts[i].dead) this.floatingTexts.splice(i, 1);
     }
   }

@@ -4,6 +4,7 @@ window.HudSystem = class HudSystem {
     this.selectedPlacedTower = null;
     this.hoveredButtonId = null;
     this.lastClickAction = null;
+    this.showingStats = false;
     this.time = 0;
   }
 
@@ -15,6 +16,7 @@ window.HudSystem = class HudSystem {
   selectPlacedTower(tower) {
     this.selectedPlacedTower = tower;
     this.selectedTowerType = null;
+    this.showingStats = false;
     if (tower) tower.selected = true;
   }
 
@@ -22,6 +24,7 @@ window.HudSystem = class HudSystem {
     if (this.selectedPlacedTower) this.selectedPlacedTower.selected = false;
     this.selectedPlacedTower = null;
     this.selectedTowerType = null;
+    this.showingStats = false;
     towerSystem?.towers.forEach(t => t.selected = false);
   }
 
@@ -53,19 +56,19 @@ window.HudSystem = class HudSystem {
     ctx.fillRect(0, 56, w, 1);
     ctx.restore();
 
-    RENDER.text(ctx, 'NEXUS', 24, 28, {
+    RENDER.text(ctx, 'NEXUS LAND.', 24, 28, {
       size: 18, color: DATA.COLORS.rail, weight: 700, baseline: 'middle',
-      font: 'Orbitron', letterSpacing: 4
+      font: 'Orbitron', letterSpacing: 2
     });
 
     ctx.fillStyle = DATA.COLORS.borderStrong;
-    ctx.fillRect(115, 16, 1, 24);
+    ctx.fillRect(178, 16, 1, 24);
 
-    RENDER.text(ctx, state.mapName, 135, 22, { size: 11, color: DATA.COLORS.textMuted, baseline: 'middle' });
+    RENDER.text(ctx, state.mapName, 196, 22, { size: 11, color: DATA.COLORS.textMuted, baseline: 'middle' });
     RENDER.text(ctx, `WAVE ${String(state.wave).padStart(2,'0')}/${state.totalWaves === Infinity ? '∞' : String(state.totalWaves).padStart(2,'0')}`,
-      135, 38, { size: 13, color: DATA.COLORS.textPrimary, baseline: 'middle', weight: 500 });
+      196, 38, { size: 13, color: DATA.COLORS.textPrimary, baseline: 'middle', weight: 500 });
 
-    const dotsStart = 270;
+    const dotsStart = 345;
     const dotMax = Math.min(state.totalWaves, 15);
     for (let i = 0; i < dotMax; i++) {
       const active = i < state.wave;
@@ -289,6 +292,19 @@ window.HudSystem = class HudSystem {
       letterSpacing: 2, glow: tower.color, glowStrength: 0.5
     });
 
+    // Tab: UPS | ?
+    const tabW = 46, tabH = 20;
+    if (RENDER.button(ctx, px + panelW - 100, py + 8, tabW, tabH, 'UPS', {
+      color: !this.showingStats ? tower.color : DATA.COLORS.textMuted,
+      bg: !this.showingStats ? '#0d2020' : DATA.COLORS.bgPanel,
+      size: 10
+    })) this.showingStats = false;
+    if (RENDER.button(ctx, px + panelW - 50, py + 8, tabW, tabH, '?', {
+      color: this.showingStats ? DATA.COLORS.gold : DATA.COLORS.textMuted,
+      bg: this.showingStats ? '#201a06' : DATA.COLORS.bgPanel,
+      size: 12
+    })) this.showingStats = true;
+
     RENDER.text(ctx, `dmg ${Math.round(tower.damage)}`, px + 16, py + 48,
       { size: 11, color: DATA.COLORS.textSecondary, baseline: 'middle' });
     RENDER.text(ctx, `rng ${tower.range === Infinity ? '∞' : Math.round(tower.range)}`, px + 76, py + 48,
@@ -303,67 +319,69 @@ window.HudSystem = class HudSystem {
     ctx.fillStyle = DATA.COLORS.border;
     ctx.fillRect(px + 16, py + 62, panelW - 32, 1);
 
-    const paths = ['A', 'B', 'C'];
-    paths.forEach((p, i) => {
-      const ay = py + 76 + i * 56;
-      const ab = tower.abilities[p];
-      const cfg = DATA.RUN_UPGRADES[tower.type][p];
-      const isMax = ab.level >= 3;
-      const nextCost = isMax ? null : cfg.levels[ab.level].cost;
-      const nextDesc = isMax ? '— MAX —' : cfg.levels[ab.level].desc;
-      const canBuy = !isMax && state.coins >= nextCost;
+    if (this.showingStats) {
+      this.renderTowerStats(ctx, tower, px, py, panelW);
+    } else {
+      const paths = ['A', 'B', 'C'];
+      paths.forEach((p, i) => {
+        const ay = py + 76 + i * 56;
+        const ab = tower.abilities[p];
+        const cfg = DATA.RUN_UPGRADES[tower.type][p];
+        const isMax = ab.level >= 3;
+        const nextCost = isMax ? null : cfg.levels[ab.level].cost;
+        const nextDesc = isMax ? '— MAX —' : cfg.levels[ab.level].desc;
+        const canBuy = !isMax && state.coins >= nextCost;
 
-      RENDER.text(ctx, cfg.label, px + 16, ay + 12,
-        { size: 12, color: tower.color, weight: 700, baseline: 'middle' });
+        RENDER.text(ctx, cfg.label, px + 16, ay + 12,
+          { size: 12, color: tower.color, weight: 700, baseline: 'middle' });
 
-      for (let lv = 0; lv < 3; lv++) {
-        const filled = lv < ab.level;
-        ctx.save();
-        if (filled) {
+        for (let lv = 0; lv < 3; lv++) {
+          const filled = lv < ab.level;
+          ctx.save();
+          if (filled) {
+            ctx.shadowColor = tower.color;
+            ctx.shadowBlur = 6;
+          }
+          ctx.fillStyle = filled ? tower.color : DATA.COLORS.bg;
+          ctx.strokeStyle = filled ? tower.color : DATA.COLORS.borderStrong;
+          ctx.lineWidth = 1;
+          RENDER.roundedRect(ctx, px + 130 + lv * 14, ay + 6, 10, 12, 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        RENDER.text(ctx, nextDesc, px + 16, ay + 30,
+          { size: 10, color: DATA.COLORS.textMuted, baseline: 'middle' });
+
+        if (!isMax) {
+          const btnX = px + panelW - 80;
+          const btnY = ay + 2;
+          if (RENDER.button(ctx, btnX, btnY, 64, 30, `◈ ${nextCost}`, {
+            color: canBuy ? tower.color : DATA.COLORS.textMuted,
+            size: 11,
+            disabled: !canBuy
+          })) {
+            this.lastClickAction = { type: 'upgradeAbility', path: p };
+          }
+        } else {
+          const btnX = px + panelW - 80;
+          const btnY = ay + 2;
+          ctx.save();
           ctx.shadowColor = tower.color;
-          ctx.shadowBlur = 6;
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = DATA.COLORS.bg;
+          ctx.strokeStyle = tower.color;
+          ctx.lineWidth = 1;
+          RENDER.roundedRect(ctx, btnX, btnY, 64, 30, 4);
+          ctx.fill();
+          ctx.stroke();
+          ctx.restore();
+          RENDER.text(ctx, 'MAX', btnX + 32, btnY + 15,
+            { size: 11, color: tower.color, align: 'center', baseline: 'middle', weight: 700 });
         }
-        ctx.fillStyle = filled ? tower.color : DATA.COLORS.bg;
-        ctx.strokeStyle = filled ? tower.color : DATA.COLORS.borderStrong;
-        ctx.lineWidth = 1;
-        // Dots shifted right to leave room for longer path labels (e.g. "Quebra-escudo")
-        RENDER.roundedRect(ctx, px + 130 + lv * 14, ay + 6, 10, 12, 2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      RENDER.text(ctx, nextDesc, px + 16, ay + 30,
-        { size: 10, color: DATA.COLORS.textMuted, baseline: 'middle' });
-
-      if (!isMax) {
-        const btnX = px + panelW - 80;
-        const btnY = ay + 2;
-        const btnLabel = `◈ ${nextCost}`;
-        if (RENDER.button(ctx, btnX, btnY, 64, 30, btnLabel, {
-          color: canBuy ? tower.color : DATA.COLORS.textMuted,
-          size: 11,
-          disabled: !canBuy
-        })) {
-          this.lastClickAction = { type: 'upgradeAbility', path: p };
-        }
-      } else {
-        const btnX = px + panelW - 80;
-        const btnY = ay + 2;
-        ctx.save();
-        ctx.shadowColor = tower.color;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = DATA.COLORS.bg;
-        ctx.strokeStyle = tower.color;
-        ctx.lineWidth = 1;
-        RENDER.roundedRect(ctx, btnX, btnY, 64, 30, 4);
-        ctx.fill();
-        ctx.stroke();
-        ctx.restore();
-        RENDER.text(ctx, 'MAX', btnX + 32, btnY + 15,
-          { size: 11, color: tower.color, align: 'center', baseline: 'middle', weight: 700 });
-      }
-    });
+      });
+    }
 
     const sellY = py + panelH - 40;
     const refund = Math.floor(tower.totalSpent * DATA.ECONOMY.sellRefundPercent);
@@ -371,6 +389,94 @@ window.HudSystem = class HudSystem {
       color: DATA.COLORS.danger, size: 11
     })) {
       this.lastClickAction = { type: 'sellTower' };
+    }
+  }
+
+  renderTowerStats(ctx, tower, px, py, panelW) {
+    const pierce = Math.floor(tower.pierceBase) + (tower.runPierce || 0);
+    const shots  = 1 + (tower.multiShot || 0);
+
+    // DPS estimate (single target, sustained)
+    let dps;
+    if (tower.type === 'rail') {
+      dps = tower.damage * (1 + tower.critChance) / tower.cooldown;
+    } else if (tower.type === 'sniper') {
+      dps = tower.damage * (1 + tower.critChance) * shots / tower.cooldown;
+    } else if (tower.type === 'nova') {
+      dps = tower.damage / tower.cooldown + (tower.burnEffect?.dps ?? 0);
+    } else {
+      dps = tower.damage / tower.cooldown;
+    }
+
+    const dpsLabel = tower.type === 'rail' && pierce > 0 ? 'DPS total' : 'DPS est.';
+    const dpsDisplay = tower.type === 'rail' ? dps * (pierce + 1) : dps;
+
+    const rows = [];
+    rows.push(['DANO',     Math.round(tower.damage),         false]);
+    rows.push(['COOLDOWN', tower.cooldown.toFixed(2)+'s',    false]);
+    rows.push([dpsLabel,   dpsDisplay.toFixed(1),            true]);
+    rows.push(['ALCANCE',  tower.range === Infinity ? '∞' : Math.round(tower.range), false]);
+
+    if (tower.critChance > 0)
+      rows.push(['CRÍTICO', Math.round(tower.critChance * 100) + '%', false]);
+
+    if (tower.type === 'rail') {
+      rows.push(['PIERCE', pierce + (pierce === 1 ? ' alvo' : ' alvos'), false]);
+    }
+
+    if (tower.type === 'ice' && tower.slowEffect) {
+      rows.push(['SLOW',    Math.round(tower.slowEffect.percent * 100) + '%', false]);
+      rows.push(['S-DUR',   tower.slowEffect.duration.toFixed(1) + 's',       false]);
+      if (tower.aoeRadius > 0)
+        rows.push(['RAIO AoE', Math.round(tower.aoeRadius), false]);
+    }
+
+    if (tower.type === 'sniper') {
+      if (shots > 1)
+        rows.push(['TIROS/CD', shots, false]);
+      if (tower.headshotChance > 0)
+        rows.push(['HEADSHOT', Math.round(tower.headshotChance * 100) + '%', false]);
+      rows.push(['ESCUDO', tower.ignoresShield
+        ? 'ignora tudo'
+        : tower.shieldBreakBonus > 0 ? '+' + Math.round(tower.shieldBreakBonus) : '—', false]);
+    }
+
+    if (tower.type === 'nova' && tower.burnEffect) {
+      rows.push(['BURN DPS',  tower.burnEffect.dps.toFixed(1) + '/s', false]);
+      rows.push(['B-DURAÇÃO', tower.burnEffect.duration.toFixed(1) + 's', false]);
+      rows.push(['RAIO AoE',  Math.round(tower.aoeRadius), false]);
+      if ((tower.chainCount || 0) > 0)
+        rows.push(['CHAIN', '×' + tower.chainCount, false]);
+    }
+
+    const startY = py + 78;
+    const rowH   = 20;
+    const col1X  = px + 16;
+    const col2X  = px + 148;
+
+    rows.forEach(([label, value, hi], i) => {
+      const x = i % 2 === 0 ? col1X : col2X;
+      const y = startY + Math.floor(i / 2) * rowH;
+      RENDER.text(ctx, label, x, y, {
+        size: 9, color: DATA.COLORS.textMuted, baseline: 'middle'
+      });
+      RENDER.text(ctx, String(value), x, y + 11, {
+        size: 12, color: hi ? DATA.COLORS.gold : DATA.COLORS.textPrimary,
+        baseline: 'middle', weight: 600
+      });
+    });
+
+    // Investido
+    const invY = startY + Math.ceil(rows.length / 2) * rowH + 6;
+    if (invY + 18 < py + 246) {
+      ctx.fillStyle = DATA.COLORS.border;
+      ctx.fillRect(px + 16, invY, panelW - 32, 1);
+      RENDER.text(ctx, 'INVESTIDO', px + 16, invY + 12, {
+        size: 9, color: DATA.COLORS.textMuted, baseline: 'middle'
+      });
+      RENDER.text(ctx, '◈ ' + tower.totalSpent, px + 82, invY + 12, {
+        size: 12, color: DATA.COLORS.gold, baseline: 'middle', weight: 600
+      });
     }
   }
 

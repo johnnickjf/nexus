@@ -68,14 +68,14 @@ window.MenuScene = class MenuScene {
     ctx.shadowColor = DATA.COLORS.rail;
     ctx.shadowBlur = 8;
     ctx.globalAlpha = 0.45;
-    ctx.fillRect(cx - 360, titleY - 8, 720, 1);
-    ctx.fillRect(cx - 360, titleY + 88, 720, 1);
+    ctx.fillRect(cx - 460, titleY - 8, 920, 1);
+    ctx.fillRect(cx - 460, titleY + 88, 920, 1);
     ctx.restore();
 
     // title with breathing letter spacing
-    const ls = 14 + 4 * (0.5 + 0.5 * Math.sin(this.time * 0.9));
-    RENDER.text(ctx, 'NEXUS', cx, titleY + 40, {
-      size: 84, color: DATA.COLORS.rail, weight: 900,
+    const ls = 4 + 3 * (0.5 + 0.5 * Math.sin(this.time * 0.9));
+    RENDER.text(ctx, 'NEXUS LAND.', cx, titleY + 40, {
+      size: 64, color: DATA.COLORS.rail, weight: 900,
       align: 'center', baseline: 'middle',
       font: 'Orbitron', letterSpacing: ls,
       glow: DATA.COLORS.rail, glowStrength: 1.4
@@ -138,11 +138,12 @@ window.MenuScene = class MenuScene {
     RENDER.text(ctx, `${save.stars} estrelas`, 76, footerY,
       { size: 12, color: DATA.COLORS.gold, baseline: 'middle' });
 
-    RENDER.text(ctx, `mapas concluídos ${save.completedMaps.length}/10`,
-      cx, footerY, { size: 11, color: DATA.COLORS.textSecondary, align: 'center', baseline: 'middle' });
-
-    RENDER.text(ctx, 'NEXUS  ·  © 2026', DATA.VIRTUAL_WIDTH - 60, footerY,
-      { size: 11, color: DATA.COLORS.textMuted, align: 'right', baseline: 'middle' });
+    const authorHovered = mouse.x > DATA.VIRTUAL_WIDTH - 240 && mouse.x < DATA.VIRTUAL_WIDTH - 20
+      && mouse.y > footerY - 12 && mouse.y < footerY + 12;
+    RENDER.text(ctx, 'Johnnick F. Landim  ·  © 2026', DATA.VIRTUAL_WIDTH - 60, footerY,
+      { size: 11, color: authorHovered ? DATA.COLORS.textSecondary : DATA.COLORS.textMuted,
+        align: 'right', baseline: 'middle' });
+    if (authorHovered && INPUT.wasClicked()) window.open(DATA.SUPPORT_URL, '_blank');
 
     return clicked;
   }

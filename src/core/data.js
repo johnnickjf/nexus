@@ -66,7 +66,7 @@ window.DATA = (function() {
       tagline: 'Slow · controle',
       color: COLORS.ice,
       shape: 'circle',
-      cost: 50,
+      cost: 65,
       damage: 2,
       range: 140,
       cooldown: 0.75,
@@ -193,7 +193,7 @@ window.DATA = (function() {
     bossWaveStarBonus: 8,
     mapCompleteStarBonus: 35,
     waveBreakDuration: 12,
-    firstWaveDelay: 25
+    firstWaveDelay: 15
   };
 
   // 10 nodes per path: root(0), row2(1-3), row3(4-5), row4(6-8), final(9)
@@ -259,13 +259,13 @@ window.DATA = (function() {
            levels: [
              { cost: 20, desc: '+1 alvo perfurado' },
              { cost: 50, desc: '+2 alvos perfurados' },
-             { cost: 120, desc: '+4 alvos (soma com tree)' }
+             { cost: 120, desc: '+3 alvos (soma com tree)' }
            ]},
       B: { label: 'Velocidade', icon: 'speed',
            levels: [
              { cost: 20, desc: 'Cooldown ×0.8' },
              { cost: 50, desc: 'Cooldown ×0.6' },
-             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.10s)' }
+             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.18s)' }
            ]},
       C: { label: 'Crit', icon: 'crit',
            levels: [
@@ -319,7 +319,7 @@ window.DATA = (function() {
            levels: [
              { cost: 20, desc: '+2 dps burn' },
              { cost: 50, desc: '+5 dps burn' },
-             { cost: 120, desc: '+10 dps burn' }
+             { cost: 120, desc: '+6 dps burn' }
            ]},
       B: { label: 'Cooldown', icon: 'speed',
            levels: [
@@ -356,6 +356,6 @@ window.DATA = (function() {
     VIRTUAL_WIDTH: 1280,
     VIRTUAL_HEIGHT: 720,
 
-    SUPPORT_URL: 'https://buymeacoffee.com/seu-usuario'
+    SUPPORT_URL: 'https://links.johnnick.com.br/'
   };
 })();

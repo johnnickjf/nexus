@@ -113,7 +113,7 @@ window.MapSelectScene = class MapSelectScene {
         { size: 11, color: unlocked ? DATA.COLORS.textSecondary : DATA.COLORS.textMuted,
           align: 'center', baseline: 'middle', weight: 500 });
 
-      if (hovered && unlocked && INPUT.wasClicked()) {
+      if (!this.selectedMap && hovered && unlocked && INPUT.wasClicked()) {
         mapClicked = i;
       }
     }

@@ -355,7 +355,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[10] = {
     id: 10, name: 'Setor 10', tagline: 'Caos Total',
-    coreHp: 6, totalWaves: 20,
+    coreHp: 8, totalWaves: 20,
     path: [
       { x: 0,    y: 340 }, { x: 120,  y: 340 }, { x: 120,  y: 160 },
       { x: 340,  y: 160 }, { x: 340,  y: 520 }, { x: 560,  y: 520 },

@@ -28,7 +28,7 @@ window.SupportScene = class SupportScene {
       align: 'center', baseline: 'middle', font: 'Orbitron', letterSpacing: 8
     });
 
-    RENDER.text(ctx, 'O NEXUS é um projeto independente feito por um desenvolvedor solo.',
+    RENDER.text(ctx, 'O Nexus Land. é um projeto independente feito por um desenvolvedor solo.',
       cx, 250, { size: 13, color: DATA.COLORS.textSecondary, align: 'center', baseline: 'middle' });
     RENDER.text(ctx, 'Se você curtiu o jogo, considere comprar um café — ajuda muito.',
       cx, 274, { size: 13, color: DATA.COLORS.textSecondary, align: 'center', baseline: 'middle' });

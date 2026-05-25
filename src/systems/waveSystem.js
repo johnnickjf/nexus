@@ -48,9 +48,8 @@ window.WaveSystem = class WaveSystem {
         onStarsEarned(stars, wave);
 
         if (this.mode === 'normal' && this.currentWaveNumber >= this.totalWaves) {
-          onStarsEarned(DATA.ECONOMY.mapCompleteStarBonus, wave);
           this.state = 'victory';
-          onMapComplete(true);
+          onMapComplete(true, DATA.ECONOMY.mapCompleteStarBonus);
           return;
         }
 
