@@ -45,6 +45,11 @@ window.ProjectileSystem = class ProjectileSystem {
           this.applyHit(e, this.makeHit(p, e), onKill, floatingTextList);
 
           if (p.sourceTowerType === 'ice' && p.aoeRadius > 0) {
+            // Visual burst at impact so o jogador vê a AoE crescer com upgrades
+            this.explosions.push({
+              x: e.x, y: e.y, radius: p.aoeRadius,
+              color: DATA.COLORS.ice, life: 0.35, max: 0.35
+            });
             const others = enemySystem.enemiesInRadius(e.x, e.y, p.aoeRadius);
             for (const other of others) {
               if (other.id === e.id || p.hitEnemies.has(other.id)) continue;
@@ -193,10 +198,12 @@ window.ProjectileSystem = class ProjectileSystem {
 
   applySlowAndBurn(enemy, hit) {
     if (hit.slow) {
+      const resistFactor = enemy.slowResist ?? 1.0;
+      const effectivePercent = hit.slow.percent * resistFactor;
       const cur = enemy.slow?.percent ?? 0;
-      if (hit.slow.percent > cur) {
-        enemy.slow = { percent: hit.slow.percent, timeLeft: hit.slow.duration };
-      } else if (hit.slow.percent === cur) {
+      if (effectivePercent > cur) {
+        enemy.slow = { percent: effectivePercent, timeLeft: hit.slow.duration };
+      } else if (effectivePercent === cur) {
         enemy.slow.timeLeft = hit.slow.duration;
       }
     }

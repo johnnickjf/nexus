@@ -29,7 +29,7 @@ window.WaveSystem = class WaveSystem {
       while (this.spawnIndex < this.currentWave.enemies.length) {
         const next = this.currentWave.enemies[this.spawnIndex];
         if (elapsed >= next.delay) {
-          enemySystem.spawn(next.type, next.modifiers, this.currentWaveNumber, this.mapData);
+          enemySystem.spawn(next.type, next.modifiers, this.currentWaveNumber, this.mapData, this.mode);
           this.spawnIndex++;
         } else {
           break;

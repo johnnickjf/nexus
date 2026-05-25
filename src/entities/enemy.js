@@ -1,10 +1,21 @@
 window.Enemy = class Enemy {
-  constructor(type, wave, modifiers = [], mapData) {
+  constructor(type, wave, modifiers = [], mapData, mode = 'normal') {
     this.id = Enemy.nextId++;
     this.type = type;
     const def = DATA.ENEMIES[type];
 
-    this.maxHp = DATA.computeHp(def.baseHp, def.hpPerWave, wave);
+    this.spawnWave = wave;
+    this.spawnMode = mode;
+
+    let scaledHp = DATA.computeHp(def.baseHp, def.hpPerWave, wave);
+    if (mode === 'infinite' && wave > 15) {
+      const w = wave - 15;
+      let mul = 1 + w * 0.04 + Math.sqrt(w) * 0.3;
+      // Boss já escala muito no linear (hpPerWave 80) — amortece o mul pra não virar invivével
+      if (def.isBoss) mul = 1 + (mul - 1) * 0.45;
+      scaledHp = Math.floor(scaledHp * mul);
+    }
+    this.maxHp = scaledHp;
     this.hp = this.maxHp;
     this.baseSpeed = def.speed;
     this.size = def.size;
@@ -14,6 +25,9 @@ window.Enemy = class Enemy {
     this.coreDamage = def.coreDamage;
     this.coinReward = def.coinReward;
     this.name = def.name;
+
+    // Inimigos pesados resistem ao slow do ICE (multiplica a porcentagem aplicada)
+    this.slowResist = def.isBoss ? 0.4 : (type === 'tank' ? 0.5 : 1.0);
 
     this.pathProgress = 0;
     this.mapData = mapData;
@@ -55,6 +69,12 @@ window.Enemy = class Enemy {
 
   get currentSpeed() {
     let s = this.baseSpeed;
+    // Speed escala +1% por wave acima de 20, cap 2.5x (1.8x pra boss)
+    if (this.spawnWave > 20) {
+      const cap = this.isBoss ? 1.8 : 2.5;
+      const speedMul = Math.min(cap, 1 + (this.spawnWave - 20) * 0.01);
+      s *= speedMul;
+    }
     if (this.hasLightning) s *= DATA.MODIFIERS.lightningSpeedMul;
     if (this.slow) s *= (1 - this.slow.percent);
     return s;

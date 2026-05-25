@@ -291,10 +291,14 @@ window.HudSystem = class HudSystem {
 
     RENDER.text(ctx, `dmg ${Math.round(tower.damage)}`, px + 16, py + 48,
       { size: 11, color: DATA.COLORS.textSecondary, baseline: 'middle' });
-    RENDER.text(ctx, `rng ${tower.range === Infinity ? '∞' : Math.round(tower.range)}`, px + 90, py + 48,
+    RENDER.text(ctx, `rng ${tower.range === Infinity ? '∞' : Math.round(tower.range)}`, px + 76, py + 48,
       { size: 11, color: DATA.COLORS.textSecondary, baseline: 'middle' });
-    RENDER.text(ctx, `cd ${tower.cooldown.toFixed(2)}s`, px + 160, py + 48,
+    RENDER.text(ctx, `cd ${tower.cooldown.toFixed(2)}s`, px + 132, py + 48,
       { size: 11, color: DATA.COLORS.textSecondary, baseline: 'middle' });
+    if (tower.aoeRadius > 0) {
+      RENDER.text(ctx, `aoe ${Math.round(tower.aoeRadius)}`, px + 200, py + 48,
+        { size: 11, color: tower.color, baseline: 'middle', weight: 600 });
+    }
 
     ctx.fillStyle = DATA.COLORS.border;
     ctx.fillRect(px + 16, py + 62, panelW - 32, 1);

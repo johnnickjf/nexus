@@ -232,13 +232,13 @@ window.DATA = (function() {
 
   const TREE_EFFECTS = {
     rail: {
-      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.025s cd',   finalText: 'Modo Gatling' },
-      B: { label: 'Perfuração', desc: 'Inimigos atravessados',   nodeText: '+0.15 alvo',   finalText: 'Perfura todos' },
-      C: { label: 'Crítico',    desc: 'Chance de dano dobrado',  nodeText: '+2% crit',     finalText: '+10% crit bônus' }
+      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.020s cd',   finalText: 'cd ×0.6 (piso 0.15s)' },
+      B: { label: 'Perfuração', desc: 'Inimigos atravessados',   nodeText: '+0.15 alvo',   finalText: '+5 alvos (combina com run)' },
+      C: { label: 'Crítico',    desc: 'Chance de dano dobrado',  nodeText: '+2% crit',     finalText: '+10% crit (cap 50%)' }
     },
     ice: {
-      A: { label: 'Slow',   desc: 'Intensidade do slow', nodeText: '+4% slow',  finalText: 'Freeze 1.5s' },
-      B: { label: 'Raio',   desc: 'Área do efeito',      nodeText: '+3 raio',   finalText: 'Raio dobrado' },
+      A: { label: 'Slow',   desc: 'Intensidade do slow', nodeText: '+4% slow',  finalText: 'Slow 85% 1.5s' },
+      B: { label: 'Raio',   desc: 'Área do efeito',      nodeText: '+1.5 raio', finalText: 'Raio dobrado' },
       C: { label: 'Dano',   desc: 'Dano base',           nodeText: '+0.8 dmg',  finalText: '+8 dmg bônus' }
     },
     sniper: {
@@ -259,19 +259,19 @@ window.DATA = (function() {
            levels: [
              { cost: 20, desc: '+1 alvo perfurado' },
              { cost: 50, desc: '+2 alvos perfurados' },
-             { cost: 120, desc: 'Perfura toda a linha' }
+             { cost: 120, desc: '+4 alvos (soma com tree)' }
            ]},
       B: { label: 'Velocidade', icon: 'speed',
            levels: [
              { cost: 20, desc: 'Cooldown ×0.8' },
              { cost: 50, desc: 'Cooldown ×0.6' },
-             { cost: 120, desc: 'Cooldown ×0.4' }
+             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.10s)' }
            ]},
       C: { label: 'Crit', icon: 'crit',
            levels: [
              { cost: 20, desc: '+10% crit' },
              { cost: 50, desc: '+20% crit' },
-             { cost: 120, desc: '+35% crit' }
+             { cost: 120, desc: '+35% crit (cap 50%)' }
            ]}
     },
     ice: {
@@ -283,9 +283,9 @@ window.DATA = (function() {
            ]},
       B: { label: 'Raio', icon: 'aoe',
            levels: [
-             { cost: 20, desc: '+10 raio AoE' },
-             { cost: 50, desc: '+25 raio AoE' },
-             { cost: 120, desc: '+50 raio AoE' }
+             { cost: 20, desc: '+5 raio AoE' },
+             { cost: 50, desc: '+12 raio AoE' },
+             { cost: 120, desc: '+25 raio AoE' }
            ]},
       C: { label: 'Dano', icon: 'damage',
            levels: [

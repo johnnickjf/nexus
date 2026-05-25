@@ -51,26 +51,26 @@ window.Tower = class Tower {
     const treeEffects = {
       rail: {
         A: (n, fin) => {
-          this.cooldown = Math.max(0.08, this.cooldown - 0.025 * n);
-          if (fin) this.cooldown = Math.max(0.05, this.cooldown * 0.6);
+          this.cooldown = Math.max(0.20, this.cooldown - 0.020 * n);
+          if (fin) this.cooldown = Math.max(0.15, this.cooldown * 0.6);
         },
         B: (n, fin) => {
           this.pierceBase += 0.15 * n;
-          if (fin) this.pierceBase = Infinity;
+          if (fin) this.pierceBase = 5;
         },
         C: (n, fin) => {
-          this.critChance += 0.02 * n;
-          if (fin) this.critChance += 0.10;
+          this.critChance = Math.min(0.50, this.critChance + 0.02 * n);
+          if (fin) this.critChance = Math.min(0.50, this.critChance + 0.10);
         }
       },
       ice: {
         A: (n, fin) => {
           if (!this.slowEffect) return;
-          this.slowEffect.percent = Math.min(0.95, this.slowEffect.percent + 0.04 * n);
-          if (fin) { this.slowEffect.percent = 1.0; this.slowEffect.duration = 1.5; }
+          this.slowEffect.percent = Math.min(0.85, this.slowEffect.percent + 0.04 * n);
+          if (fin) { this.slowEffect.percent = 0.85; this.slowEffect.duration = 1.5; }
         },
         B: (n, fin) => {
-          this.aoeRadius += 3 * n;
+          this.aoeRadius += 1.5 * n;
           if (fin) this.aoeRadius *= 2;
         },
         C: (n, fin) => {
@@ -141,21 +141,21 @@ window.Tower = class Tower {
   applyRunUpgradeEffect(path, newLevel) {
     if (this.type === 'rail') {
       if (path === 'A') {
-        const pierceLevels = [0, 1, 2, Infinity];
+        const pierceLevels = [0, 1, 2, 4];
         this.runPierce = pierceLevels[newLevel];
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.6, 0.4][newLevel];
-        this.cooldown = this._baseCooldown * cdMul;
+        this.cooldown = Math.max(0.10, this._baseCooldown * cdMul);
       } else if (path === 'C') {
         const critBonus = [0, 0.10, 0.20, 0.35][newLevel];
-        this.critChance = this._baseCritChance + critBonus;
+        this.critChance = Math.min(0.50, this._baseCritChance + critBonus);
       }
     } else if (this.type === 'ice') {
       if (path === 'A') {
         const slowBonus = [0, 0.15, 0.30, 0.50][newLevel];
-        this.slowEffect.percent = MATH_UTILS.clamp(this._baseSlowPercent + slowBonus, 0, 1);
+        this.slowEffect.percent = MATH_UTILS.clamp(this._baseSlowPercent + slowBonus, 0, 0.85);
       } else if (path === 'B') {
-        const aoeBonus = [0, 10, 25, 50][newLevel];
+        const aoeBonus = [0, 5, 12, 25][newLevel];
         this.aoeRadius = this._baseAoeRadius + aoeBonus;
       } else if (path === 'C') {
         const dmgBonus = [0, 2, 5, 10][newLevel];
@@ -201,6 +201,26 @@ window.Tower = class Tower {
       ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
+
+      // AOE radius preview (ice/nova) — only when > 0
+      if (this.aoeRadius > 0) {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 0.06;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.aoeRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.aoeRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     const animTime = (typeof window !== 'undefined' && window.game && window.game.scenes && window.game.scenes.game) ? window.game.scenes.game.gameTime : 0;

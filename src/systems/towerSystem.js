@@ -50,9 +50,10 @@ window.TowerSystem = class TowerSystem {
 
   fireRail(tower, target, projectileSystem) {
     const isCrit = Math.random() < tower.critChance;
-    let pierce = (tower.pierceBase === Infinity) ? Infinity : Math.floor(tower.pierceBase);
+    // Pierce: soma tree + run. Tree max = 5, Run max = 4 → combinado = 9 alvos.
+    let pierce = Math.floor(tower.pierceBase);
     if (tower.runPierce !== undefined) {
-      pierce = tower.runPierce === Infinity ? Infinity : Math.max(pierce, tower.runPierce);
+      pierce += tower.runPierce;
     }
 
     projectileSystem.add(new Projectile({

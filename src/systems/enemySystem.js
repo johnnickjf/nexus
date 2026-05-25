@@ -4,8 +4,8 @@ window.EnemySystem = class EnemySystem {
     this.deathFx = [];
   }
 
-  spawn(type, modifiers, wave, mapData) {
-    const e = new Enemy(type, wave, modifiers, mapData);
+  spawn(type, modifiers, wave, mapData, mode) {
+    const e = new Enemy(type, wave, modifiers, mapData, mode);
     this.enemies.push(e);
     return e;
   }
