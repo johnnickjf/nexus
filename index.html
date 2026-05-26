@@ -3,18 +3,86 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEXUS LAND. — Tower Defense</title>
+
+  <!-- SEO principal -->
+  <title>NEXUS LAND. — Tower Defense Sci-Fi Grátis no Navegador</title>
+  <meta name="description" content="NEXUS LAND. é um jogo de tower defense sci-fi grátis para jogar no navegador. Defenda o núcleo com 5 torres upgradáveis, 5 habilidades ativas e enfrente 10 tipos de inimigos com modificadores aleatórios. Sem download, sem instalação.">
+  <meta name="keywords" content="tower defense, jogo grátis, browser game, sci-fi, nexus land, jogo online, defesa de torre, estratégia, jogo no navegador">
+  <meta name="author" content="Landlabs">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://nexus.landlabs.com.br/">
+
+  <!-- Open Graph (compartilhamento no WhatsApp, Discord, Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="NEXUS LAND.">
+  <meta property="og:title" content="NEXUS LAND. — Tower Defense Sci-Fi">
+  <meta property="og:description" content="Jogo de tower defense sci-fi grátis no navegador. 5 torres com árvore de upgrades, 5 habilidades ativas, 10 tipos de inimigos. Defenda o núcleo — sem download.">
+  <meta property="og:url" content="https://nexus.landlabs.com.br/">
+  <meta property="og:image" content="https://nexus.landlabs.com.br/src/image/logo_att.png">
+  <meta property="og:image:alt" content="Logo do jogo NEXUS LAND. — Tower Defense Sci-Fi">
+  <meta property="og:locale" content="pt_BR">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="NEXUS LAND. — Tower Defense Sci-Fi">
+  <meta name="twitter:description" content="Jogo de tower defense sci-fi grátis no navegador. 5 torres, 5 habilidades, 10 inimigos. Sem download.">
+  <meta name="twitter:image" content="https://nexus.landlabs.com.br/src/image/logo_att.png">
+
+  <!-- Cor do tema (mobile/PWA) -->
+  <meta name="theme-color" content="#050510">
+
   <link rel="icon" type="image/png" href="src/image/logo_att.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+
+  <!-- Structured Data — VideoGame (Google Rich Results) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "NEXUS LAND.",
+    "alternateName": "Nexus Land Tower Defense",
+    "description": "Jogo de tower defense sci-fi grátis para jogar no navegador. Defenda o núcleo de energia contra ondas de inimigos alienígenas com 5 torres upgradáveis, 5 habilidades ativas e uma árvore de progressão persistente.",
+    "url": "https://nexus.landlabs.com.br/",
+    "image": "https://nexus.landlabs.com.br/src/image/logo_att.png",
+    "genre": ["Tower Defense", "Strategy", "Sci-Fi"],
+    "gamePlatform": "Web Browser",
+    "applicationCategory": "Game",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL"
+    },
+    "author": {
+      "@type": "Organization",
+      "name": "Landlabs",
+      "url": "https://landlabs.com.br"
+    },
+    "inLanguage": "pt-BR",
+    "playMode": "SinglePlayer"
+  }
+  </script>
 </head>
 <body>
   <div id="game-container">
-    <canvas id="game-canvas" width="1280" height="720"></canvas>
-    <div id="loading-fallback">Carregando NEXUS...</div>
+    <canvas id="game-canvas" width="1280" height="720" aria-label="NEXUS LAND. — Jogo de Tower Defense Sci-Fi" role="img"></canvas>
+    <div id="loading-fallback">
+      <h1>NEXUS LAND.</h1>
+      <p>Tower Defense Sci-Fi — grátis no navegador</p>
+      <p>Defenda o núcleo de energia contra ondas de inimigos alienígenas. Posicione e evolua 5 torres com caminhos de upgrade únicos, use 5 habilidades ativas e enfrente 10 tipos de inimigos com modificadores aleatórios.</p>
+      <p>Sem download. Sem instalação. Jogue agora.</p>
+    </div>
   </div>
+
+  <noscript>
+    <div style="text-align:center;padding:40px;font-family:monospace;color:#c0c0e8;background:#050510">
+      <h1>NEXUS LAND. — Tower Defense Sci-Fi</h1>
+      <p>Este jogo requer JavaScript para funcionar. Ative o JavaScript no seu navegador e recarregue a página.</p>
+    </div>
+  </noscript>
 
   <script src="src/core/data.js"></script>
   <script src="src/core/math.js"></script>
