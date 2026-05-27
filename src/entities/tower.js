@@ -52,7 +52,7 @@ window.Tower = class Tower {
       rail: {
         A: (n, fin) => {
           this.cooldown = Math.max(0.20, this.cooldown - 0.020 * n);
-          if (fin) this.cooldown = Math.max(0.15, this.cooldown * 0.6);
+          if (fin) this.cooldown = Math.max(0.20, this.cooldown * 0.6);
         },
         B: (n, fin) => {
           this.pierceBase += 0.15 * n;
@@ -95,12 +95,12 @@ window.Tower = class Tower {
       nova: {
         A: (n, fin) => {
           this.damage += 4 * n;
-          if (fin) this.damage += 30;
+          if (fin) this.damage += 20;
         },
         B: (n, fin) => {
           if (!this.burnEffect) return;
           this.burnEffect.dps += 0.5 * n;
-          if (fin) { this.burnEffect.dps *= 2; this.burnEffect.duration += 3; }
+          if (fin) { this.burnEffect.dps *= 1.6; this.burnEffect.duration += 3; }
         },
         C: (n, fin) => {
           this.aoeRadius += 3 * n;
@@ -145,7 +145,7 @@ window.Tower = class Tower {
         this.runPierce = pierceLevels[newLevel];
       } else if (path === 'B') {
         const cdMul = [1, 0.8, 0.6, 0.4][newLevel];
-        this.cooldown = Math.max(0.18, this._baseCooldown * cdMul);
+        this.cooldown = Math.max(0.15, this._baseCooldown * cdMul);
       } else if (path === 'C') {
         const critBonus = [0, 0.10, 0.20, 0.35][newLevel];
         this.critChance = Math.min(0.50, this._baseCritChance + critBonus);

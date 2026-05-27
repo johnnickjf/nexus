@@ -189,16 +189,18 @@ window.DATA = (function() {
     startingCoins: 150,
     waveCompleteBonus: 40,
     sellRefundPercent: 0.7,
-    starsPerWave: 2,
-    bossWaveStarBonus: 8,
-    mapCompleteStarBonus: 35,
+    starsPerWave: 5,
+    bossWaveStarBonus: 5,
+    mapCompleteStarBonus: 50,
     waveBreakDuration: 12,
     firstWaveDelay: 15,
     repositionsPerMap: 3
   };
 
   // 10 nodes per path: root(0), row2(1-3), row3(4-5), row4(6-8), final(9)
-  const TREE_NODE_COSTS = [5, 10, 10, 10, 20, 20, 35, 35, 35, 60];
+  // Custo uniforme: cada nó dá o mesmo bônus, então cobra o mesmo.
+  // Final (node 9) é mais caro por ter efeito especial único.
+  const TREE_NODE_COSTS = [5, 5, 5, 5, 5, 5, 5, 5, 5, 30];
 
   const TREE_LAYOUT = {
     nodes: [
@@ -233,7 +235,7 @@ window.DATA = (function() {
 
   const TREE_EFFECTS = {
     rail: {
-      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.020s cd',   finalText: 'cd ×0.6 (piso 0.15s)' },
+      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.020s cd',   finalText: 'cd ×0.6 (piso 0.20s)' },
       B: { label: 'Perfuração', desc: 'Inimigos atravessados',   nodeText: '+0.15 alvo',   finalText: '+5 alvos (combina com run)' },
       C: { label: 'Crítico',    desc: 'Chance de dano dobrado',  nodeText: '+2% crit',     finalText: '+10% crit (cap 50%)' }
     },
@@ -248,8 +250,8 @@ window.DATA = (function() {
       C: { label: 'Quebra-escudo',desc: 'Dano em escudo',   nodeText: '+1.5 escudo',    finalText: 'Ignora escudo' }
     },
     nova: {
-      A: { label: 'Dano',       desc: 'Dano da explosão',  nodeText: '+4 dmg',   finalText: '+30 dmg total' },
-      B: { label: 'Queimadura', desc: 'Dano por segundo',  nodeText: '+0.5 dps', finalText: 'Inferno' },
+      A: { label: 'Dano',       desc: 'Dano da explosão',  nodeText: '+4 dmg',   finalText: '+20 dmg total' },
+      B: { label: 'Queimadura', desc: 'Dano por segundo',  nodeText: '+0.5 dps', finalText: 'Inferno ×1.6' },
       C: { label: 'Raio',       desc: 'Raio de explosão',  nodeText: '+3 raio',  finalText: 'Raio dobrado' }
     }
   };
@@ -266,7 +268,7 @@ window.DATA = (function() {
            levels: [
              { cost: 20, desc: 'Cooldown ×0.8' },
              { cost: 50, desc: 'Cooldown ×0.6' },
-             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.18s)' }
+             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.15s)' }
            ]},
       C: { label: 'Crit', icon: 'crit',
            levels: [
