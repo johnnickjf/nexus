@@ -234,12 +234,15 @@ window.GameScene = class GameScene {
     const mouse = INPUT.getMouse();
     const inMoveMode = this.hudSystem.moveMode;
     const pulse = 0.5 + 0.5 * Math.sin(this.gameTime * 5);
+    const touchMode = INPUT.isTouch();
+    // Hover detection radius: larger on touch so the finger doesn't need to be precise
+    const hoverR = touchMode ? 30 : 20;
 
-    this.mapData.slots.forEach((slot, i) => {
+    this.mapData.slots.forEach((slot) => {
       const key = slot.x + ',' + slot.y;
       if (this.slotOccupied[key]) return;
 
-      const hovered = MATH_UTILS.pointInCircle(mouse.x, mouse.y, slot.x, slot.y, 20);
+      const hovered = MATH_UTILS.pointInCircle(mouse.x, mouse.y, slot.x, slot.y, hoverR);
       const canPlace = this.hudSystem.selectedTowerType !== null;
 
       let strokeColor, fillColor, dotColor, radius = 14;
@@ -247,6 +250,11 @@ window.GameScene = class GameScene {
         strokeColor = hovered ? DATA.COLORS.sniper : DATA.COLORS.gold;
         fillColor   = hovered ? '#201a06' : 'transparent';
         dotColor    = hovered ? DATA.COLORS.sniper : DATA.COLORS.gold;
+      } else if (canPlace && touchMode) {
+        // On touch: highlight ALL available slots so the player knows where to tap
+        strokeColor = hovered ? DATA.COLORS.rail : DATA.COLORS.borderHover;
+        fillColor   = hovered ? '#0d1a18' : '#0a0f1c';
+        dotColor    = DATA.COLORS.rail;
       } else {
         strokeColor = (hovered && canPlace) ? DATA.COLORS.rail : DATA.COLORS.borderStrong;
         fillColor   = (hovered && canPlace) ? '#0d1a18' : 'transparent';
@@ -257,10 +265,13 @@ window.GameScene = class GameScene {
       if (inMoveMode) {
         ctx.globalAlpha = hovered ? 1 : 0.5 + 0.3 * pulse;
         if (hovered) { ctx.shadowColor = DATA.COLORS.sniper; ctx.shadowBlur = 12; }
+      } else if (canPlace && touchMode && !hovered) {
+        // Gentle pulse on all available slots to draw attention
+        ctx.globalAlpha = 0.55 + 0.35 * pulse;
       }
       ctx.strokeStyle = strokeColor;
       ctx.fillStyle   = fillColor;
-      ctx.lineWidth   = inMoveMode ? 1.4 : 0.8;
+      ctx.lineWidth   = (inMoveMode || (canPlace && touchMode)) ? 1.4 : 0.8;
       ctx.setLineDash(inMoveMode ? [4, 2] : [3, 3]);
       ctx.beginPath();
       ctx.arc(slot.x, slot.y, radius, 0, Math.PI * 2);
@@ -310,12 +321,15 @@ window.GameScene = class GameScene {
 
     if (cp.y < 60 || cp.y > DATA.VIRTUAL_HEIGHT - 100) return;
 
+    // Slot hit radius: larger on touch so imprecise fingers still land correctly
+    const slotR = INPUT.isTouch() ? 32 : 22;
+
     // Move mode — click empty slot to reposition, anything else cancels
     if (this.hudSystem.moveMode && this.hudSystem.movingTower) {
       for (const slot of this.mapData.slots) {
         const key = slot.x + ',' + slot.y;
         if (this.slotOccupied[key]) continue;
-        if (MATH_UTILS.pointInCircle(cp.x, cp.y, slot.x, slot.y, 22)) {
+        if (MATH_UTILS.pointInCircle(cp.x, cp.y, slot.x, slot.y, slotR)) {
           this.processHudAction({ type: 'moveTower', slot });
           INPUT.consumeClick();
           return;
@@ -332,7 +346,7 @@ window.GameScene = class GameScene {
       for (const slot of this.mapData.slots) {
         const key = slot.x + ',' + slot.y;
         if (this.slotOccupied[key]) continue;
-        if (MATH_UTILS.pointInCircle(cp.x, cp.y, slot.x, slot.y, 22)) {
+        if (MATH_UTILS.pointInCircle(cp.x, cp.y, slot.x, slot.y, slotR)) {
           const type = this.hudSystem.selectedTowerType;
           const cost = DATA.TOWERS[type].cost;
           if (this.coins >= cost) {
@@ -353,7 +367,7 @@ window.GameScene = class GameScene {
       }
     }
 
-    const t = this.towerSystem.findAt(cp.x, cp.y);
+    const t = this.towerSystem.findAt(cp.x, cp.y, INPUT.isTouch() ? 32 : 22);
     if (t) {
       this.hudSystem.deselectAll(this.towerSystem);
       this.hudSystem.selectPlacedTower(t);

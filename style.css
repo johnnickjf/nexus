@@ -47,6 +47,8 @@ html, body {
   cursor: crosshair;
   position: relative;
   z-index: 1;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
   box-shadow:
     0 0 0 1px rgba(45, 255, 200, 0.08),
     0 0 60px rgba(45, 255, 200, 0.04);

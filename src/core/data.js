@@ -51,7 +51,7 @@ window.DATA = (function() {
       color: COLORS.rail,
       shape: 'square',
       cost: 70,
-      damage: 6,
+      damage: 8,
       range: 150,
       cooldown: 0.45,
       critChance: 0.04,
@@ -74,7 +74,7 @@ window.DATA = (function() {
       projectile: {
         type: 'linear',
         speed: 520,
-        slow: { percent: 0.25, duration: 1.5 }
+        slow: { percent: 0.38, duration: 2.0 }
       }
     },
     sniper: {
@@ -106,7 +106,7 @@ window.DATA = (function() {
         type: 'arc',
         speed: 320,
         aoeRadius: 40,
-        burn: { dps: 3, duration: 1.9 }
+        burn: { dps: 5, duration: 2.4 }
       }
     }
   };
@@ -187,7 +187,7 @@ window.DATA = (function() {
 
   const ECONOMY = {
     startingCoins: 150,
-    waveCompleteBonus: 30,
+    waveCompleteBonus: 40,
     sellRefundPercent: 0.7,
     starsPerWave: 2,
     bossWaveStarBonus: 8,
