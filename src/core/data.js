@@ -55,6 +55,7 @@ window.DATA = (function() {
       range: 150,
       cooldown: 0.45,
       critChance: 0.04,
+      critMul: 1.5,
       projectile: {
         type: 'linear',
         speed: 650,
@@ -74,7 +75,8 @@ window.DATA = (function() {
       projectile: {
         type: 'linear',
         speed: 520,
-        slow: { percent: 0.38, duration: 2.0 }
+        aoeRadius: 10,
+        slow: { percent: 0.38, duration: 0.5 }
       }
     },
     sniper: {
@@ -198,9 +200,8 @@ window.DATA = (function() {
   };
 
   // 10 nodes per path: root(0), row2(1-3), row3(4-5), row4(6-8), final(9)
-  // Custo uniforme: cada nó dá o mesmo bônus, então cobra o mesmo.
-  // Final (node 9) é mais caro por ter efeito especial único.
-  const TREE_NODE_COSTS = [5, 5, 5, 5, 5, 5, 5, 5, 5, 30];
+  // Nós 0-3: 5 estrelas | Nós 4-8: 8 estrelas | Final (9): 40 estrelas = 100 total por tower
+  const TREE_NODE_COSTS = [5, 5, 5, 5, 8, 8, 8, 8, 8, 40];
 
   const TREE_LAYOUT = {
     nodes: [
@@ -233,111 +234,156 @@ window.DATA = (function() {
     }
   };
 
+  // TREE_EFFECTS — árvore global (estrelas). Display: label/desc/nodeText/finalText
+  // (lidos pela skillTreeScene). Lógica: apply(tower, n, fin) onde n = nº de nós
+  // adquiridos no path e fin = se o nó final está adquirido.
   const TREE_EFFECTS = {
     rail: {
-      A: { label: 'Velocidade', desc: 'Cadência de tiro',        nodeText: '-0.020s cd',   finalText: 'cd ×0.6 (piso 0.20s)' },
-      B: { label: 'Perfuração', desc: 'Inimigos atravessados',   nodeText: '+0.15 alvo',   finalText: '+5 alvos (combina com run)' },
-      C: { label: 'Crítico',    desc: 'Chance de dano dobrado',  nodeText: '+2% crit',     finalText: '+10% crit (cap 50%)' }
+      A: { label: 'Velocidade', desc: 'Cadência de tiro', nodeText: '-0.020s cd', finalText: 'cd ×0.6 (piso 0.20s)',
+           apply: (t, n, fin) => { t.cooldown = Math.max(0.20, t.cooldown - 0.020 * n); if (fin) t.cooldown = Math.max(0.20, t.cooldown * 0.6); } },
+      B: { label: 'Perfuração', desc: 'Inimigos atravessados', nodeText: '+0.15 alvo', finalText: '+4 alvos (combina com run)',
+           apply: (t, n, fin) => { t.pierceBase += 0.15 * n; if (fin) t.pierceBase = 4; } },
+      C: { label: 'Crítico', desc: 'Chance de acerto crítico', nodeText: '+2% crit', finalText: '+10% crit (cap 30%)',
+           apply: (t, n, fin) => { t.critChance = Math.min(0.30, t.critChance + 0.02 * n); if (fin) t.critChance = Math.min(0.30, t.critChance + 0.10); } }
     },
     ice: {
-      A: { label: 'Slow',   desc: 'Intensidade do slow', nodeText: '+4% slow',  finalText: 'Slow 85% 1.5s' },
-      B: { label: 'Raio',   desc: 'Área do efeito',      nodeText: '+1.5 raio', finalText: 'Raio dobrado' },
-      C: { label: 'Dano',   desc: 'Dano base',           nodeText: '+0.8 dmg',  finalText: '+8 dmg bônus' }
+      A: { label: 'Slow', desc: 'Intensidade do slow', nodeText: '+4% slow', finalText: 'Slow 85%',
+           apply: (t, n, fin) => { if (!t.slowEffect) return; t.slowEffect.percent = Math.min(0.85, t.slowEffect.percent + 0.04 * n); if (fin) t.slowEffect.percent = 0.85; } },
+      B: { label: 'Fragilidade', desc: 'Dano em inimigos lentos', nodeText: '+3% frag', finalText: '35% frag (todas as torres)',
+           apply: (t, n, fin) => { t.fragilityBonus = Math.min(0.35, 0.03 * n); if (fin) t.fragilityBonus = 0.35; } },
+      C: { label: 'Duração', desc: 'Duração do slow', nodeText: '+0.11s dur', finalText: '2.5s total (+1s)',
+           apply: (t, n, fin) => { if (!t.slowEffect) return; t.slowEffect.duration = Math.min(1.5, 0.5 + 0.11 * n); if (fin) t.slowEffect.duration = 2.5; } }
     },
     sniper: {
-      A: { label: 'Range',        desc: 'Alcance do tiro',  nodeText: '+8 range',       finalText: 'Range ilimitado' },
-      B: { label: 'Dano',         desc: 'Dano por tiro',    nodeText: '+4 dmg',         finalText: 'Execução <20%' },
-      C: { label: 'Quebra-escudo',desc: 'Dano em escudo',   nodeText: '+1.5 escudo',    finalText: 'Ignora escudo' }
+      A: { label: 'Range', desc: 'Alcance do tiro', nodeText: '+8 range', finalText: 'Range ilimitado',
+           apply: (t, n, fin) => { t.range += 8 * n; if (fin) t.range = Infinity; } },
+      B: { label: 'Dano', desc: 'Dano por tiro', nodeText: '+3 dmg', finalText: 'Execução <20%',
+           apply: (t, n, fin) => { t.damage += 3 * n; if (fin) t.canExecute = true; } },
+      C: { label: 'Quebra-escudo', desc: 'Dano em escudo', nodeText: '+1.5 escudo', finalText: 'Ignora escudo',
+           apply: (t, n, fin) => { t.shieldBreakBonus += 1.5 * n; if (fin) t.ignoresShield = true; } }
     },
     nova: {
-      A: { label: 'Dano',       desc: 'Dano da explosão',  nodeText: '+4 dmg',   finalText: '+20 dmg total' },
-      B: { label: 'Queimadura', desc: 'Dano por segundo',  nodeText: '+0.5 dps', finalText: 'Inferno ×1.6' },
-      C: { label: 'Raio',       desc: 'Raio de explosão',  nodeText: '+3 raio',  finalText: 'Raio dobrado' }
+      A: { label: 'Dano', desc: 'Dano da explosão', nodeText: '+4 dmg', finalText: '+15 dmg total',
+           apply: (t, n, fin) => { t.damage += 4 * n; if (fin) t.damage += 15; } },
+      B: { label: 'Queimadura', desc: 'Dano por segundo', nodeText: '+0.5 dps', finalText: 'Inferno ×1.3 (+1.5s burn)',
+           apply: (t, n, fin) => { if (!t.burnEffect) return; t.burnEffect.dps += 0.5 * n; if (fin) { t.burnEffect.dps *= 1.3; t.burnEffect.duration += 1.5; } } },
+      C: { label: 'Raio', desc: 'Raio de explosão', nodeText: '+3 raio', finalText: 'Raio ×1.2',
+           apply: (t, n, fin) => { t.aoeRadius += 3 * n; if (fin) t.aoeRadius *= 1.2; } }
     }
   };
 
+  // RUN_UPGRADES — upgrades comprados na partida com moedas.
+  // Estrutura data-driven: cada path define `levels` (cost + valores nomeados),
+  // `apply(tower, levelData)` que aplica o efeito, e `desc(levelData, tower)` que
+  // gera o texto a partir dos MESMOS valores. Single source of truth: mudar o
+  // número em `levels` atualiza efeito e descrição juntos.
+  const pct = v => Math.round(v * 100);
+  const cdDesc = d => `Cooldown ×${d.mul.toFixed(2)} (−${pct(1 - d.mul)}%)`;
+
   const RUN_UPGRADES = {
     rail: {
-      A: { label: 'Perfuração', icon: 'pierce',
-           levels: [
-             { cost: 20, desc: '+1 alvo perfurado' },
-             { cost: 50, desc: '+2 alvos perfurados' },
-             { cost: 120, desc: '+3 alvos (soma com tree)' }
-           ]},
-      B: { label: 'Velocidade', icon: 'speed',
-           levels: [
-             { cost: 20, desc: 'Cooldown ×0.8' },
-             { cost: 50, desc: 'Cooldown ×0.6' },
-             { cost: 120, desc: 'Cooldown ×0.4 (piso 0.15s)' }
-           ]},
-      C: { label: 'Crit', icon: 'crit',
-           levels: [
-             { cost: 20, desc: '+10% crit' },
-             { cost: 50, desc: '+20% crit' },
-             { cost: 120, desc: '+35% crit (cap 50%)' }
-           ]}
+      A: {
+        label: 'Rajada', icon: 'burst',
+        levels: [{every: 8 }, {every: 6 }, {every: 4 }],
+        desc: d => `A cada ${d.every} tiros, dispara 3 projéteis em leque`,
+        apply: (t, d) => { t.burstEvery = d.every; }
+      },
+      B: {
+        label: 'Velocidade', icon: 'speed',
+        levels: [{mul: 0.85 }, {mul: 0.70 }, {mul: 0.40 }],
+        desc: cdDesc,
+        apply: (t, d) => { t.cooldown = Math.max(0.15, t._baseCooldown * d.mul); }
+      },
+      C: {
+        label: 'Dano Crítico', icon: 'crit',
+        levels: [{mul: 2.0 }, {mul: 3.0 }, {mul: 5.0 }],
+        desc: d => `Crítico causa ${pct(d.mul)}% do dano (×${d.mul})`,
+        apply: (t, d) => { t.critMul = d.mul; }
+      }
     },
     ice: {
-      A: { label: 'Slow forte', icon: 'slow',
-           levels: [
-             { cost: 20, desc: '+15% slow' },
-             { cost: 50, desc: '+30% slow' },
-             { cost: 120, desc: '+50% slow' }
-           ]},
-      B: { label: 'Raio', icon: 'aoe',
-           levels: [
-             { cost: 20, desc: '+5 raio AoE' },
-             { cost: 50, desc: '+12 raio AoE' },
-             { cost: 120, desc: '+25 raio AoE' }
-           ]},
-      C: { label: 'Dano', icon: 'damage',
-           levels: [
-             { cost: 20, desc: '+2 dano' },
-             { cost: 50, desc: '+5 dano' },
-             { cost: 120, desc: '+10 dano' }
-           ]}
+      A: {
+        label: 'Slow forte', icon: 'slow',
+        levels: [{add: 0.08 }, {add: 0.16 }, {add: 0.45 }],
+        desc: d => `+${pct(d.add)}% slow`,
+        apply: (t, d) => { t.slowEffect.percent = MATH_UTILS.clamp(t._baseSlowPercent + d.add, 0, 0.90); }
+      },
+      B: {
+        label: 'Raio', icon: 'aoe',
+        levels: [{add: 15 }, {add: 30 }, {add: 50 }],
+        desc: (d, t) => `Raio AoE ${(t ? t._baseAoeRadius : 10) + d.add} (+${d.add})`,
+        apply: (t, d) => { t.aoeRadius = t._baseAoeRadius + d.add; }
+      },
+      C: {
+        label: 'Dano', icon: 'damage',
+        levels: [{add: 2 }, {add: 5 }, {add: 10 }],
+        desc: d => `+${d.add} dano`,
+        apply: (t, d) => { t.damage = t._baseDamage + d.add; }
+      }
     },
     sniper: {
-      A: { label: 'Quebra-escudo', icon: 'shield',
-           levels: [
-             { cost: 20, desc: 'Ignora escudo azul' },
-             { cost: 50, desc: 'Ignora escudo dourado' },
-             { cost: 120, desc: 'Ignora todos os escudos' }
-           ]},
-      B: { label: 'Headshot', icon: 'crit',
-           levels: [
-             { cost: 20, desc: '10% instakill' },
-             { cost: 50, desc: '20% instakill' },
-             { cost: 120, desc: '30% instakill' }
-           ]},
-      C: { label: 'Tiro duplo', icon: 'multi',
-           levels: [
-             { cost: 20, desc: '+1 disparo' },
-             { cost: 50, desc: '+2 disparos' },
-             { cost: 120, desc: '+3 disparos' }
-           ]}
+      A: {
+        label: 'Precisão', icon: 'speed',
+        levels: [{mul: 0.92 }, {mul: 0.83 }, {mul: 0.65 }],
+        desc: cdDesc,
+        apply: (t, d) => { t.cooldown = Math.max(1.4, t._baseCooldown * d.mul); }
+      },
+      B: {
+        label: 'Headshot', icon: 'crit',
+        levels: [{chance: 0.08 }, {chance: 0.15 }, {chance: 0.30 }],
+        desc: d => `${pct(d.chance)}% instakill`,
+        apply: (t, d) => { t.headshotChance = d.chance; }
+      },
+      C: {
+        label: 'Multi-tiro', icon: 'multi',
+        levels: [{shots: 2, dmgMul: 1 }, {shots: 3, dmgMul: 1 }, {shots: 3, dmgMul: 1.30 }],
+        desc: d => d.dmgMul > 1
+          ? `${d.shots} disparos, +${pct(d.dmgMul - 1)}% dano`
+          : `${d.shots} disparos por ataque`,
+        apply: (t, d) => { t.multiShot = d.shots - 1; t.damage = Math.round(t._baseDamage * d.dmgMul); }
+      }
     },
     nova: {
-      A: { label: 'Burn forte', icon: 'burn',
-           levels: [
-             { cost: 20, desc: '+2 dps burn' },
-             { cost: 50, desc: '+5 dps burn' },
-             { cost: 120, desc: '+6 dps burn' }
-           ]},
-      B: { label: 'Cooldown', icon: 'speed',
-           levels: [
-             { cost: 20, desc: 'Cooldown ×0.8' },
-             { cost: 50, desc: 'Cooldown ×0.65' },
-             { cost: 120, desc: 'Cooldown ×0.5' }
-           ]},
-      C: { label: 'Chain', icon: 'chain',
-           levels: [
-             { cost: 20, desc: '+1 explosão em chain' },
-             { cost: 50, desc: '+2 explosões em chain' },
-             { cost: 120, desc: '+3 explosões em chain' }
-           ]}
+      A: {
+        label: 'Burn forte', icon: 'burn',
+        levels: [{add: 2 }, {add: 4 }, {add: 9 }],
+        desc: d => `+${d.add} dps de queimadura`,
+        apply: (t, d) => { t.burnEffect.dps = t._baseBurnDps + d.add; }
+      },
+      B: {
+        label: 'Cooldown', icon: 'speed',
+        levels: [{mul: 0.85 }, {mul: 0.72 }, {mul: 0.50 }],
+        desc: cdDesc,
+        apply: (t, d) => { t.cooldown = Math.max(0.9, t._baseCooldown * d.mul); }
+      },
+      C: {
+        label: 'Chain', icon: 'chain',
+        levels: [{chains: 1 }, {chains: 2 }, {chains: 3 }],
+        desc: d => `+${d.chains} ${d.chains === 1 ? 'explosão' : 'explosões'} em cadeia`,
+        apply: (t, d) => { t.chainCount = d.chains; }
+      }
     }
   };
+
+  // Custo dos upgrades de partida, por torre: [nível1, nível2, nível3].
+  // Curva exponencial ancorada no custo de construção da torre:
+  //   construir uma torre nova custa ENTRE o upgrade 1 e o upgrade 2 — é aí que
+  //   mora a dúvida "evoluir ou construir?". L1 ≈ 0.5× build, L2 ≈ 1.25× build,
+  //   L3 ≈ 2.5× build (pesado, e só 1 caminho chega ao nível 3).
+  // Single source of truth: ajuste um número aqui e os 3 caminhos seguem.
+  const UPGRADE_COSTS = {
+    rail:   [35, 90, 180],   // build 70
+    ice:    [30, 80, 165],   // build 65
+    sniper: [45, 110, 225],  // build 90
+    nova:   [80, 200, 400]   // build 160
+  };
+  Object.keys(RUN_UPGRADES).forEach(type => {
+    ['A', 'B', 'C'].forEach(path => {
+      RUN_UPGRADES[type][path].levels.forEach((lv, i) => {
+        lv.cost = UPGRADE_COSTS[type][i];
+      });
+    });
+  });
 
   function computeHp(baseHp, hpPerWave, wave) {
     return Math.floor(baseHp + hpPerWave * wave);

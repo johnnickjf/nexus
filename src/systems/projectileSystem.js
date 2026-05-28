@@ -145,7 +145,9 @@ window.ProjectileSystem = class ProjectileSystem {
       burn: p.burn ? { ...p.burn } : null,
       shieldBreakBonus: p.shieldBreakBonus || 0,
       canExecute: p.canExecute || false,
-      headshotKill: p.headshotKill || false
+      headshotKill: p.headshotKill || false,
+      critMul: p.critMul || 2.0,
+      fragilityBonus: p.fragilityBonus || 0
     };
   }
 
@@ -156,7 +158,12 @@ window.ProjectileSystem = class ProjectileSystem {
 
     if (enemy.invulnerable) return;
 
-    let damageToApply = hit.isCrit ? hit.damage * 2 : hit.damage;
+    let damageToApply = hit.isCrit ? hit.damage * (hit.critMul || 2.0) : hit.damage;
+
+    // Fragilidade (Ice B): inimigos lentos recebem bônus de dano de todas as torres
+    if (enemy.fragile && enemy.slow) {
+      damageToApply *= (1 + enemy.fragile.bonus);
+    }
 
     if (enemy.shield && enemy.shield.hp > 0) {
       if (!hit.ignoresShield) {
@@ -179,6 +186,13 @@ window.ProjectileSystem = class ProjectileSystem {
     enemy.hitFlash = 0.08;
 
     this.applySlowAndBurn(enemy, hit);
+
+    // Aplicar fragilidade quando Ice acerta inimigo lento
+    if (hit.fragilityBonus > 0 && enemy.slow) {
+      if (!enemy.fragile || enemy.fragile.bonus < hit.fragilityBonus) {
+        enemy.fragile = { bonus: hit.fragilityBonus, timeLeft: enemy.slow.timeLeft };
+      }
+    }
 
     if (floatingTextList && hit.isCrit) {
       floatingTextList.push(new FloatingText(`CRIT`, enemy.x, enemy.y - enemy.size - 14, '#ffff88'));

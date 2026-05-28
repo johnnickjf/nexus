@@ -286,7 +286,7 @@ window.HudSystem = class HudSystem {
 
   renderTowerPanel(ctx, tower, state) {
     const panelW = 260;
-    const panelH = 290;
+    const panelH = 312;
     const px = DATA.VIRTUAL_WIDTH - panelW - 16;
     const py = 76;
 
@@ -330,66 +330,82 @@ window.HudSystem = class HudSystem {
     ctx.fillRect(px + 16, py + 62, panelW - 32, 1);
 
     if (this.showingStats) {
-      this.renderTowerStats(ctx, tower, px, py, panelW);
+      this.renderTowerStats(ctx, tower, px, py, panelW, panelH);
     } else {
       const paths = ['A', 'B', 'C'];
+      const rowH = 64;
+      const descW = panelW - 34;       // largura útil para a descrição
+      const btnW = 62, btnH = 26;
+      const btnX = px + panelW - 16 - btnW;
+
       paths.forEach((p, i) => {
-        const ay = py + 76 + i * 56;
+        const ay = py + 78 + i * rowH;
         const ab = tower.abilities[p];
         const cfg = DATA.RUN_UPGRADES[tower.type][p];
         const isMax = ab.level >= 3;
+        const isLocked = tower.isPathLocked(p);
         const nextCost = isMax ? null : cfg.levels[ab.level].cost;
-        const nextDesc = isMax ? '— MAX —' : cfg.levels[ab.level].desc;
-        const canBuy = !isMax && state.coins >= nextCost;
+        const canBuy = !isMax && !isLocked && state.coins >= nextCost;
 
-        RENDER.text(ctx, cfg.label, px + 16, ay + 12,
+        // Descrição: efeito do PRÓXIMO nível (gerada de data.js), ou estado especial
+        const nextDesc = isMax
+          ? '✓ Totalmente evoluído'
+          : isLocked
+            ? 'Bloqueado: outro caminho já atingiu o nível máximo'
+            : cfg.desc(cfg.levels[ab.level], tower);
+
+        // --- Linha superior: nome + pips + botão ---
+        RENDER.text(ctx, cfg.label, px + 16, ay + 11,
           { size: 12, color: tower.color, weight: 700, baseline: 'middle' });
 
+        // pips de nível (3)
         for (let lv = 0; lv < 3; lv++) {
           const filled = lv < ab.level;
           ctx.save();
-          if (filled) {
-            ctx.shadowColor = tower.color;
-            ctx.shadowBlur = 6;
-          }
+          if (filled) { ctx.shadowColor = tower.color; ctx.shadowBlur = 6; }
           ctx.fillStyle = filled ? tower.color : DATA.COLORS.bg;
           ctx.strokeStyle = filled ? tower.color : DATA.COLORS.borderStrong;
           ctx.lineWidth = 1;
-          RENDER.roundedRect(ctx, px + 130 + lv * 14, ay + 6, 10, 12, 2);
+          RENDER.roundedRect(ctx, px + 116 + lv * 13, ay + 5, 10, 12, 2);
           ctx.fill();
           ctx.stroke();
           ctx.restore();
         }
 
-        RENDER.text(ctx, nextDesc, px + 16, ay + 30,
-          { size: 10, color: DATA.COLORS.textMuted, baseline: 'middle' });
-
-        if (!isMax) {
-          const btnX = px + panelW - 80;
-          const btnY = ay + 2;
-          if (RENDER.button(ctx, btnX, btnY, 64, 30, `◈ ${nextCost}`, {
+        // botão / MAX / bloqueado
+        if (isMax) {
+          ctx.save();
+          ctx.shadowColor = tower.color; ctx.shadowBlur = 8;
+          ctx.fillStyle = DATA.COLORS.bg; ctx.strokeStyle = tower.color; ctx.lineWidth = 1;
+          RENDER.roundedRect(ctx, btnX, ay, btnW, btnH, 4);
+          ctx.fill(); ctx.stroke(); ctx.restore();
+          RENDER.text(ctx, 'MAX', btnX + btnW / 2, ay + btnH / 2,
+            { size: 11, color: tower.color, align: 'center', baseline: 'middle', weight: 700 });
+        } else if (isLocked) {
+          ctx.save();
+          ctx.fillStyle = DATA.COLORS.bg; ctx.strokeStyle = DATA.COLORS.textDim;
+          ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
+          RENDER.roundedRect(ctx, btnX, ay, btnW, btnH, 4);
+          ctx.fill(); ctx.stroke(); ctx.restore();
+          RENDER.text(ctx, '⊘', btnX + btnW / 2, ay + btnH / 2,
+            { size: 14, color: DATA.COLORS.textDim, align: 'center', baseline: 'middle' });
+        } else {
+          if (RENDER.button(ctx, btnX, ay, btnW, btnH, `◈ ${nextCost}`, {
             color: canBuy ? tower.color : DATA.COLORS.textMuted,
-            size: 11,
-            disabled: !canBuy
+            size: 11, disabled: !canBuy
           })) {
             this.lastClickAction = { type: 'upgradeAbility', path: p };
           }
-        } else {
-          const btnX = px + panelW - 80;
-          const btnY = ay + 2;
-          ctx.save();
-          ctx.shadowColor = tower.color;
-          ctx.shadowBlur = 8;
-          ctx.fillStyle = DATA.COLORS.bg;
-          ctx.strokeStyle = tower.color;
-          ctx.lineWidth = 1;
-          RENDER.roundedRect(ctx, btnX, btnY, 64, 30, 4);
-          ctx.fill();
-          ctx.stroke();
-          ctx.restore();
-          RENDER.text(ctx, 'MAX', btnX + 32, btnY + 15,
-            { size: 11, color: tower.color, align: 'center', baseline: 'middle', weight: 700 });
         }
+
+        // --- Linha inferior: descrição de largura total (quebra em até 2 linhas) ---
+        const descColor = isMax ? tower.color
+          : isLocked ? DATA.COLORS.textDim : DATA.COLORS.textSecondary;
+        const lines = RENDER.wrapText(ctx, nextDesc, descW, { size: 10, maxLines: 2 });
+        lines.forEach((ln, k) => {
+          RENDER.text(ctx, ln, px + 16, ay + 33 + k * 12,
+            { size: 10, color: descColor, baseline: 'middle' });
+        });
       });
     }
 
@@ -421,8 +437,8 @@ window.HudSystem = class HudSystem {
     }
   }
 
-  renderTowerStats(ctx, tower, px, py, panelW) {
-    const pierce = Math.floor(tower.pierceBase) + (tower.runPierce || 0);
+  renderTowerStats(ctx, tower, px, py, panelW, panelH = 312) {
+    const pierce = Math.floor(tower.pierceBase);
     const shots  = 1 + (tower.multiShot || 0);
 
     // DPS estimate (single target, sustained)
@@ -446,11 +462,15 @@ window.HudSystem = class HudSystem {
     rows.push([dpsLabel,   dpsDisplay.toFixed(1),            true]);
     rows.push(['ALCANCE',  tower.range === Infinity ? '∞' : Math.round(tower.range), false]);
 
-    if (tower.critChance > 0)
-      rows.push(['CRÍTICO', Math.round(tower.critChance * 100) + '%', false]);
+    if (tower.critChance > 0) {
+      rows.push(['CRÍTICO',   Math.round(tower.critChance * 100) + '%', false]);
+      rows.push(['DANO CRIT', '×' + tower.critMul, false]);
+    }
 
     if (tower.type === 'rail') {
       rows.push(['PIERCE', pierce + (pierce === 1 ? ' alvo' : ' alvos'), false]);
+      if (tower.burstEvery > 0)
+        rows.push(['RAJADA', 'cada ' + tower.burstEvery, false]);
     }
 
     if (tower.type === 'ice' && tower.slowEffect) {
@@ -458,6 +478,8 @@ window.HudSystem = class HudSystem {
       rows.push(['S-DUR',   tower.slowEffect.duration.toFixed(1) + 's',       false]);
       if (tower.aoeRadius > 0)
         rows.push(['RAIO AoE', Math.round(tower.aoeRadius), false]);
+      if (tower.fragilityBonus > 0)
+        rows.push(['FRAGIL', '+' + Math.round(tower.fragilityBonus * 100) + '%', false]);
     }
 
     if (tower.type === 'sniper') {
@@ -497,7 +519,7 @@ window.HudSystem = class HudSystem {
 
     // Investido
     const invY = startY + Math.ceil(rows.length / 2) * rowH + 6;
-    if (invY + 18 < py + 246) {
+    if (invY + 18 < py + panelH - 46) {
       ctx.fillStyle = DATA.COLORS.border;
       ctx.fillRect(px + 16, invY, panelW - 32, 1);
       RENDER.text(ctx, 'INVESTIDO', px + 16, invY + 12, {

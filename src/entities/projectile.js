@@ -11,6 +11,7 @@ window.Projectile = class Projectile {
     this.speed = opts.speed || 600;
     this.damage = opts.damage;
     this.isCrit = !!opts.isCrit;
+    this.critMul = opts.critMul !== undefined ? opts.critMul : 2.0;
     this.ignoresShield = !!opts.ignoresShield;
     this.pierceLeft = opts.pierceLeft || 0;
     this.hitEnemies = new Set();
@@ -19,6 +20,7 @@ window.Projectile = class Projectile {
     this.aoeRadius = opts.aoeRadius || 0;
     this.slow = opts.slow || null;
     this.burn = opts.burn || null;
+    this.fragilityBonus = opts.fragilityBonus || 0;
 
     this.dead = false;
     this.life = 3.0;
@@ -40,6 +42,7 @@ window.Projectile = class Projectile {
     if (this.kind === 'hitscan') {
       this.visualDuration = opts.visualDuration || 0.12;
       this.visualTime = this.visualDuration;
+      this.color = opts.color || DATA.COLORS.sniper;
     }
   }
 
@@ -94,11 +97,12 @@ window.Projectile = class Projectile {
   render(ctx) {
     if (this.kind === 'hitscan') {
       const alpha = this.visualTime / this.visualDuration;
+      const hitscanColor = this.color || DATA.COLORS.sniper;
       ctx.save();
       // wide soft outer pass
       ctx.globalAlpha = alpha * 0.35;
-      ctx.strokeStyle = DATA.COLORS.sniper;
-      ctx.shadowColor = DATA.COLORS.sniper;
+      ctx.strokeStyle = hitscanColor;
+      ctx.shadowColor = hitscanColor;
       ctx.shadowBlur = 18;
       ctx.lineWidth = 6;
       ctx.lineCap = 'round';

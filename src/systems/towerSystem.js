@@ -49,12 +49,16 @@ window.TowerSystem = class TowerSystem {
   }
 
   fireRail(tower, target, projectileSystem) {
-    const isCrit = Math.random() < tower.critChance;
-    // Pierce: soma tree + run. Tree max = 5, Run max = 3 → combinado = 8 alvos.
-    let pierce = Math.floor(tower.pierceBase);
-    if (tower.runPierce !== undefined) {
-      pierce += tower.runPierce;
+    tower.shotCounter = (tower.shotCounter || 0) + 1;
+
+    // Rajada: no N-ésimo tiro dispara 3 projéteis em leque
+    if ((tower.burstEvery || 0) > 0 && tower.shotCounter % tower.burstEvery === 0) {
+      this.fireRailBurst(tower, target, projectileSystem);
+      return;
     }
+
+    const isCrit = Math.random() < tower.critChance;
+    const pierce = Math.floor(tower.pierceBase);
 
     projectileSystem.add(new Projectile({
       sourceTowerType: 'rail',
@@ -63,9 +67,35 @@ window.TowerSystem = class TowerSystem {
       speed: tower.projectileDef.speed,
       damage: tower.damage,
       isCrit,
+      critMul: tower.critMul,
       pierceLeft: pierce,
       kind: 'linear'
     }));
+  }
+
+  fireRailBurst(tower, target, projectileSystem) {
+    const dx = target.x - tower.x;
+    const dy = target.y - tower.y;
+    const baseAngle = Math.atan2(dy, dx);
+    const spread = 0.16; // ~9° entre cada projétil
+    const pierce = Math.floor(tower.pierceBase);
+
+    for (let i = -1; i <= 1; i++) {
+      const angle = baseAngle + i * spread;
+      const isCrit = Math.random() < tower.critChance;
+      projectileSystem.add(new Projectile({
+        sourceTowerType: 'rail',
+        x: tower.x, y: tower.y,
+        targetX: tower.x + Math.cos(angle) * 1500,
+        targetY: tower.y + Math.sin(angle) * 1500,
+        speed: tower.projectileDef.speed,
+        damage: tower.damage,
+        isCrit,
+        critMul: tower.critMul,
+        pierceLeft: pierce,
+        kind: 'linear'
+      }));
+    }
   }
 
   fireIce(tower, target, projectileSystem) {
@@ -78,21 +108,26 @@ window.TowerSystem = class TowerSystem {
       isCrit: false,
       slow: tower.slowEffect ? { ...tower.slowEffect } : null,
       aoeRadius: tower.aoeRadius,
-      kind: 'linear'
+      kind: 'linear',
+      fragilityBonus: tower.fragilityBonus || 0
     }));
   }
 
   fireSniper(tower, target, projectileSystem) {
     const shots = 1 + (tower.multiShot || 0);
 
+    // Cor do tiro baseada no nível do upgrade C (Tiro Duplo)
+    const shotColors = ['#f0c040', '#cc8820', '#e04810', '#cc1100'];
+    const colorLevel = tower.abilities?.C?.level ?? 0;
+    const shotColor = shotColors[colorLevel] || DATA.COLORS.sniper;
+
     for (let i = 0; i < shots; i++) {
       const isCrit = Math.random() < tower.critChance;
       const headshotKill = tower.headshotChance && Math.random() < tower.headshotChance;
 
-      const ignoresShield = tower.ignoresShield ||
-        (tower.shieldIgnoreLevel >= 1 && target.shield?.type === 'blue') ||
-        (tower.shieldIgnoreLevel >= 2 && target.shield?.type === 'gold') ||
-        (tower.shieldIgnoreLevel >= 3);
+      // ignoresShield vem da árvore global (Sniper C final). Quebra-escudo
+      // parcial é tratado por shieldBreakBonus no projectileSystem.
+      const ignoresShield = tower.ignoresShield;
 
       projectileSystem.add(new Projectile({
         sourceTowerType: 'sniper',
@@ -100,12 +135,14 @@ window.TowerSystem = class TowerSystem {
         targetX: target.x, targetY: target.y,
         damage: tower.damage,
         isCrit,
+        critMul: tower.critMul,
         ignoresShield,
         kind: 'hitscan',
         visualDuration: tower.projectileDef.visualDuration,
         shieldBreakBonus: tower.shieldBreakBonus,
         canExecute: tower.canExecute,
-        headshotKill
+        headshotKill,
+        color: shotColor
       }));
     }
   }

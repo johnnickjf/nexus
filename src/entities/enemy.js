@@ -43,6 +43,7 @@ window.Enemy = class Enemy {
 
     this.slow = null;
     this.burn = null;
+    this.fragile = null;
 
     this.dead = false;
     this.reachedEnd = false;
@@ -105,7 +106,12 @@ window.Enemy = class Enemy {
 
     if (this.slow) {
       this.slow.timeLeft -= dt;
-      if (this.slow.timeLeft <= 0) this.slow = null;
+      if (this.slow.timeLeft <= 0) { this.slow = null; this.fragile = null; }
+    }
+
+    if (this.fragile) {
+      this.fragile.timeLeft -= dt;
+      if (this.fragile.timeLeft <= 0) this.fragile = null;
     }
 
     if (this.burn) {
@@ -258,6 +264,18 @@ window.Enemy = class Enemy {
       ctx.beginPath();
       ctx.arc(this.x - this.size, this.y - this.size, 2.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+    }
+
+    if (this.fragile) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size + 3, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.restore();
     }
 

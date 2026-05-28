@@ -86,6 +86,40 @@ window.RENDER = (function() {
     ctx.restore();
   }
 
+  // Quebra um texto em múltiplas linhas que caibam em maxWidth (fonte monospace).
+  // Retorna array de linhas. Com maxLines, trunca a última com reticências.
+  function wrapText(ctx, str, maxWidth, opts = {}) {
+    const { size = 12, font = 'JetBrains Mono', weight = 400, maxLines = Infinity } = opts;
+    ctx.save();
+    ctx.font = `${weight} ${size}px "${font}", "Courier New", monospace`;
+    const words = String(str).split(' ');
+    const lines = [];
+    let cur = '';
+    for (const word of words) {
+      const test = cur ? cur + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && cur) {
+        lines.push(cur);
+        cur = word;
+      } else {
+        cur = test;
+      }
+    }
+    if (cur) lines.push(cur);
+
+    if (lines.length > maxLines) {
+      const kept = lines.slice(0, maxLines);
+      let last = kept[maxLines - 1];
+      while (last.length > 1 && ctx.measureText(last + '…').width > maxWidth) {
+        last = last.slice(0, -1);
+      }
+      kept[maxLines - 1] = last.trimEnd() + '…';
+      ctx.restore();
+      return kept;
+    }
+    ctx.restore();
+    return lines;
+  }
+
   function panel(ctx, x, y, w, h, opts = {}) {
     const {
       fill = DATA.COLORS.bgPanel,
@@ -457,7 +491,7 @@ window.RENDER = (function() {
   }
 
   return {
-    clear, gridBackground, text, panel, roundedRect, button,
+    clear, gridBackground, text, wrapText, panel, roundedRect, button,
     hexagon, triangle, hpBar, coinIcon, starIcon, diamond, dashedLine,
     towerShape, glowCircle,
     _lighten, _withAlpha
