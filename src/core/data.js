@@ -70,7 +70,7 @@ window.DATA = (function() {
       cost: 65,
       damage: 2,
       range: 140,
-      cooldown: 0.75,
+      cooldown: 1.10,
       critChance: 0,
       projectile: {
         type: 'linear',

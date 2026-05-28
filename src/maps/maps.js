@@ -183,7 +183,7 @@ window.MAPS = (function() {
       id: 3,
       name: 'Setor 03',
       tagline: 'Forma de S',
-      coreHp: 20,
+      coreHp: 16,
       totalWaves: 10,
       path: [
         { x: 0, y: 200 },
@@ -256,7 +256,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[4] = {
     id: 4, name: 'Setor 04', tagline: 'Duplo Z',
-    coreHp: 18, totalWaves: 12,
+    coreHp: 18, totalWaves: 12, hpMult: 1.08,
     path: [
       { x: 0,    y: 300 }, { x: 300,  y: 300 }, { x: 300,  y: 500 },
       { x: 650,  y: 500 }, { x: 650,  y: 180 }, { x: 950,  y: 180 },
@@ -288,7 +288,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[5] = {
     id: 5, name: 'Setor 05', tagline: 'Cascata',
-    coreHp: 16, totalWaves: 13,
+    coreHp: 16, totalWaves: 13, hpMult: 1.15,
     path: [
       { x: 0,    y: 160 }, { x: 220,  y: 160 }, { x: 220,  y: 400 },
       { x: 500,  y: 400 }, { x: 500,  y: 160 }, { x: 780,  y: 160 },
@@ -324,7 +324,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[6] = {
     id: 6, name: 'Setor 06', tagline: 'Labirinto',
-    coreHp: 15, totalWaves: 14,
+    coreHp: 15, totalWaves: 14, hpMult: 1.20, speedMult: 1.05,
     path: [
       { x: 0,    y: 360 }, { x: 180,  y: 360 }, { x: 180,  y: 140 },
       { x: 460,  y: 140 }, { x: 460,  y: 530 }, { x: 740,  y: 530 },
@@ -343,7 +343,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[7] = {
     id: 7, name: 'Setor 07', tagline: 'Retrocesso',
-    coreHp: 12, totalWaves: 15,
+    coreHp: 12, totalWaves: 15, hpMult: 1.28, speedMult: 1.08, coinMult: 0.92,
     path: [
       { x: 0,    y: 200 }, { x: 520,  y: 200 }, { x: 520,  y: 380 },
       { x: 140,  y: 380 }, { x: 140,  y: 540 }, { x: 680,  y: 540 },
@@ -361,7 +361,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[8] = {
     id: 8, name: 'Setor 08', tagline: 'Espiral',
-    coreHp: 10, totalWaves: 16,
+    coreHp: 10, totalWaves: 16, hpMult: 1.38, speedMult: 1.12, coinMult: 0.85,
     path: [
       { x: 0,    y: 300 }, { x: 160,  y: 300 }, { x: 160,  y: 140 },
       { x: 700,  y: 140 }, { x: 700,  y: 560 }, { x: 260,  y: 560 },
@@ -383,7 +383,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[9] = {
     id: 9, name: 'Setor 09', tagline: 'Serpente',
-    coreHp: 8, totalWaves: 18,
+    coreHp: 8, totalWaves: 18, hpMult: 1.50, speedMult: 1.16, coinMult: 0.78,
     path: [
       { x: 0,   y: 200 }, { x: 140, y: 200 }, { x: 140, y: 520 },
       { x: 420, y: 520 }, { x: 420, y: 300 }, { x: 260, y: 300 },
@@ -405,7 +405,7 @@ window.MAPS = (function() {
 
   MAP_DEFS[10] = {
     id: 10, name: 'Setor 10', tagline: 'Caos Total',
-    coreHp: 8, totalWaves: 20,
+    coreHp: 8, totalWaves: 20, hpMult: 1.65, speedMult: 1.20, coinMult: 0.72,
     path: [
       { x: 0,    y: 340 }, { x: 120,  y: 340 }, { x: 120,  y: 160 },
       { x: 340,  y: 160 }, { x: 340,  y: 520 }, { x: 560,  y: 520 },

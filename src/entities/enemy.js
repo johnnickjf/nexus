@@ -15,15 +15,20 @@ window.Enemy = class Enemy {
       if (def.isBoss) mul = 1 + (mul - 1) * 0.45;
       scaledHp = Math.floor(scaledHp * mul);
     }
+    // Dificuldade por mapa — boss recebe metade do bônus para não escalar absurdamente
+    if (mapData && mapData.hpMult && mapData.hpMult !== 1) {
+      const m = def.isBoss ? 1 + (mapData.hpMult - 1) * 0.5 : mapData.hpMult;
+      scaledHp = Math.floor(scaledHp * m);
+    }
     this.maxHp = scaledHp;
     this.hp = this.maxHp;
-    this.baseSpeed = def.speed;
+    this.baseSpeed = def.speed * (mapData && mapData.speedMult ? mapData.speedMult : 1);
     this.size = def.size;
     this.color = def.color;
     this.shape = def.shape;
     this.isBoss = def.isBoss;
     this.coreDamage = def.coreDamage;
-    this.coinReward = def.coinReward;
+    this.coinReward = Math.floor(def.coinReward * (mapData && mapData.coinMult ? mapData.coinMult : 1));
     this.name = def.name;
 
     // Inimigos pesados resistem ao slow do ICE (multiplica a porcentagem aplicada)
